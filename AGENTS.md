@@ -37,6 +37,17 @@ Every API call across the stack returns `{ ok: true, data: T } | { ok: false, er
 
 This is Svelte 5 with runes. Use `$props()`, `$derived()`, `$state()`, `#snippet`, `{@render}`. Do **not** use Svelte 4 `export let`, `$:`, or `<slot>`. The mount API is `mount(App, { target })` from `svelte`, not `new App()`.
 
+**TanStack Query store pattern:** `createQuery()` returns a Svelte `Readable` store (`{ subscribe }`), not the raw result. Convert it to a Svelte 5 reactive value with `fromStore` from `svelte/store`:
+
+```ts
+import { fromStore } from 'svelte/store';
+const query = useGamesQuery();
+const result = fromStore(query);
+// Then access via result.data, result.isLoading, result.refetch()
+```
+
+The `$store` prefix also works in `.svelte` files, but `fromStore` is the explicit, documented Svelte 5 pattern.
+
 ### Path aliases (frontend only)
 
 Three import aliases configured in both `vite.config.ts` and `tsconfig.json` paths:
@@ -64,7 +75,7 @@ The card handles the shell (header, spinner, error state, refresh button). Widge
 - **BFF** (`TTLCache<T>`) — in-memory Map with per-source TTL (~2x frontend `staleTime`). Safety net under TanStack Query.
 - **Frontend** (TanStack Query) — `staleTime` + `refetchInterval` per source. Background refetch on window focus.
 
-TTL table from the research: Weather 5min/10min, News 15min/30min, Agenda 5min/10min, Games 60min/2h (frontend stale / server cache).
+TTL table from the research: Weather 5min/10min, News 15min/30min, Agenda 5min/10min, Games 6h/12h (frontend stale / server cache).
 
 ### Mock mode
 

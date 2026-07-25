@@ -1,22 +1,24 @@
 <script lang="ts">
+  import { fromStore } from 'svelte/store';
   import { CloudSun, Thermometer, Droplets, Wind } from 'lucide-svelte';
   import WidgetCard from '../../components/WidgetCard.svelte';
   import { useWeatherQuery } from './weather-api';
   import { isOk } from '@dashboard/shared';
 
   const query = useWeatherQuery('Porto Alegre');
-  const data = $derived(query.data);
-  const error = $derived(query.data && !isOk(query.data) ? query.data.error : '');
+  const result = fromStore(query);
+  const data = $derived(result.data);
+  const error = $derived(result.data && !isOk(result.data) ? result.data.error : '');
 
   function handleRefresh() {
-    query.refetch();
+    result.refetch();
   }
 </script>
 
 <WidgetCard
   title="Weather"
-  isLoading={query.isLoading}
-  isFetching={query.isFetching}
+  isLoading={result.isLoading}
+  isFetching={result.isFetching}
   error={error}
   onRefresh={handleRefresh}
 >

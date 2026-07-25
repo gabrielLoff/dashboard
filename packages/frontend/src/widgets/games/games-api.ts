@@ -6,7 +6,7 @@ export function useGamesQuery() {
   return createQuery(() => ({
     queryKey: queryKeys.games.list(),
     queryFn: fetchGames,
-    staleTime: 60 * 60 * 1000,
-    refetchInterval: 2 * 60 * 60 * 1000,
+    staleTime: 6 * 60 * 60 * 1000,
+    refetchInterval: 12 * 60 * 60 * 1000,
   }));
 }

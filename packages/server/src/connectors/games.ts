@@ -2,11 +2,15 @@ import type { ApiResult, FreeGamesData } from '@dashboard/shared';
 import { err } from '@dashboard/shared';
 import { isMockMode, getMockGames } from '../mock-data.ts';
 
-const API_KEY = process.env.FREEGAMES_API_KEY;
 const BASE_URL = process.env.FREEGAMES_API_URL ?? 'https://www.gamerpower.com/api';
 
+function parseEndDate(raw: string): string {
+  if (!raw || raw === 'N/A') return '';
+  return raw.split(' ')[0] ?? '';
+}
+
 export async function fetchGames(): Promise<ApiResult<FreeGamesData>> {
-  if (isMockMode() || !API_KEY) {
+  if (isMockMode()) {
     return getMockGames();
   }
 
@@ -14,7 +18,7 @@ export async function fetchGames(): Promise<ApiResult<FreeGamesData>> {
     const res = await fetch(`${BASE_URL}/giveaways?platform=pc`);
 
     if (!res.ok) {
-      return err(`Free Games API returned ${res.status}: ${res.statusText}`);
+      return err(`GamerPower API returned ${res.status}: ${res.statusText}`);
     }
 
     const json = (await res.json()) as {
@@ -36,7 +40,7 @@ export async function fetchGames(): Promise<ApiResult<FreeGamesData>> {
           platform: g.platforms,
           source: g.type,
           url: g.open_giveaway_url,
-          expiryDate: g.end_date.split(' ')[0] ?? '',
+          expiryDate: parseEndDate(g.end_date),
           imageUrl: g.image,
         })),
         updatedAt: new Date().toISOString(),

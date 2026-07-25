@@ -1,23 +1,25 @@
 <script lang="ts">
+  import { fromStore } from 'svelte/store';
   import { Newspaper, ExternalLink } from 'lucide-svelte';
   import WidgetCard from '../../components/WidgetCard.svelte';
   import { useNewsQuery } from './news-api';
   import { isOk, type NewsItem } from '@dashboard/shared';
 
   const query = useNewsQuery();
-  const data = $derived(query.data);
-  const error = $derived(query.data && !isOk(query.data) ? query.data.error : '');
+  const result = fromStore(query);
+  const data = $derived(result.data);
+  const error = $derived(result.data && !isOk(result.data) ? result.data.error : '');
   const items = $derived<NewsItem[]>(data && isOk(data) ? data.data.items : []);
 
   function handleRefresh() {
-    query.refetch();
+    result.refetch();
   }
 </script>
 
 <WidgetCard
   title="News"
-  isLoading={query.isLoading}
-  isFetching={query.isFetching}
+  isLoading={result.isLoading}
+  isFetching={result.isFetching}
   error={error}
   onRefresh={handleRefresh}
 >

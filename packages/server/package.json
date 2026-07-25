@@ -13,6 +13,7 @@
   "dependencies": {
     "@dashboard/shared": "workspace:*",
     "@hono/node-server": "^2.0.11",
+    "dotenv": "^17.4.2",
     "hono": "^4.8.5"
   },
   "devDependencies": {
