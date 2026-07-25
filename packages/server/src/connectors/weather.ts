@@ -21,6 +21,19 @@ interface OpenMeteoResponse {
   current: OpenMeteoCurrent;
 }
 
+interface NominatimResponse {
+  address?: {
+    city?: string;
+    town?: string;
+    village?: string;
+    municipality?: string;
+    county?: string;
+    state?: string;
+    country?: string;
+  };
+  name?: string;
+}
+
 async function geocode(city: string): Promise<ApiResult<GeocodingResult>> {
   try {
     const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1`;
@@ -42,6 +55,67 @@ async function geocode(city: string): Promise<ApiResult<GeocodingResult>> {
   }
 }
 
+async function reverseGeocode(lat: number, lon: number): Promise<ApiResult<string>> {
+  try {
+    const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&zoom=10`;
+    const res = await fetch(url, {
+      headers: { 'User-Agent': 'PersonalDashboard/1.0' },
+    });
+
+    if (!res.ok) {
+      return err(`Reverse geocoding failed: ${res.status}`);
+    }
+
+    const json = (await res.json()) as NominatimResponse;
+
+    const name = json.address?.city
+      ?? json.address?.town
+      ?? json.address?.village
+      ?? json.address?.municipality
+      ?? json.address?.county
+      ?? json.address?.state
+      ?? json.address?.country
+      ?? json.name
+      ?? `${lat.toFixed(2)}, ${lon.toFixed(2)}`;
+
+    return { ok: true, data: name };
+  } catch (e) {
+    return err(e instanceof Error ? e.message : 'Reverse geocoding request failed');
+  }
+}
+
+function buildWeatherData(name: string, current: OpenMeteoCurrent): WeatherData {
+  const condition = getWeatherCondition(current.weather_code);
+
+  return {
+    location: name,
+    temperature: Math.round(current.temperature_2m),
+    feelsLike: Math.round(current.apparent_temperature),
+    humidity: current.relative_humidity_2m,
+    condition: condition.description,
+    icon: condition.icon,
+    windSpeed: Math.round(current.wind_speed_10m),
+    updatedAt: new Date().toISOString(),
+  };
+}
+
+async function fetchForecast(lat: number, lon: number): Promise<ApiResult<OpenMeteoCurrent>> {
+  const params = new URLSearchParams({
+    latitude: String(lat),
+    longitude: String(lon),
+    current: 'temperature_2m,relative_humidity_2m,apparent_temperature,wind_speed_10m,weather_code',
+  });
+
+  const res = await fetch(`https://api.open-meteo.com/v1/forecast?${params.toString()}`);
+
+  if (!res.ok) {
+    return err(`Open-Meteo returned ${res.status}: ${res.statusText}`);
+  }
+
+  const json = (await res.json()) as OpenMeteoResponse;
+  return { ok: true, data: json.current };
+}
+
 export async function fetchWeather(location: string): Promise<ApiResult<WeatherData>> {
   if (isMockMode()) {
     return getMockWeather();
@@ -53,36 +127,32 @@ export async function fetchWeather(location: string): Promise<ApiResult<WeatherD
   const { latitude, longitude, name } = geoResult.data;
 
   try {
-    const params = new URLSearchParams({
-      latitude: String(latitude),
-      longitude: String(longitude),
-      current: 'temperature_2m,relative_humidity_2m,apparent_temperature,wind_speed_10m,weather_code',
-    });
+    const forecastResult = await fetchForecast(latitude, longitude);
+    if (!forecastResult.ok) return forecastResult;
 
-    const res = await fetch(`https://api.open-meteo.com/v1/forecast?${params.toString()}`);
-
-    if (!res.ok) {
-      return err(`Open-Meteo returned ${res.status}: ${res.statusText}`);
-    }
-
-    const json = (await res.json()) as OpenMeteoResponse;
-    const current = json.current;
-    const condition = getWeatherCondition(current.weather_code);
-
-    return {
-      ok: true,
-      data: {
-        location: name,
-        temperature: Math.round(current.temperature_2m),
-        feelsLike: Math.round(current.apparent_temperature),
-        humidity: current.relative_humidity_2m,
-        condition: condition.description,
-        icon: condition.icon,
-        windSpeed: Math.round(current.wind_speed_10m),
-        updatedAt: new Date().toISOString(),
-      },
-    };
+    return { ok: true, data: buildWeatherData(name, forecastResult.data) };
   } catch (e) {
     return err(e instanceof Error ? e.message : 'Failed to fetch weather');
+  }
+}
+
+export async function fetchWeatherByCoords(lat: number, lon: number): Promise<ApiResult<WeatherData>> {
+  if (isMockMode()) {
+    return getMockWeather();
+  }
+
+  try {
+    const [forecastResult, reverseResult] = await Promise.all([
+      fetchForecast(lat, lon),
+      reverseGeocode(lat, lon),
+    ]);
+
+    if (!forecastResult.ok) return forecastResult;
+
+    const name = reverseResult.ok ? reverseResult.data : `${lat.toFixed(2)}, ${lon.toFixed(2)}`;
+
+    return { ok: true, data: buildWeatherData(name, forecastResult.data) };
+  } catch (e) {
+    return err(e instanceof Error ? e.message : 'Failed to fetch weather by coordinates');
   }
 }

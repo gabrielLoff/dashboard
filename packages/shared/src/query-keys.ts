@@ -4,6 +4,7 @@ export const queryKeys = {
   weather: {
     all: ['dashboard', 'weather'] as const,
     current: () => [...queryKeys.weather.all] as const,
+    byCoords: (lat: number, lon: number) => [...queryKeys.weather.all, lat.toFixed(2), lon.toFixed(2)] as const,
   },
 
   news: {

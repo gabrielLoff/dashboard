@@ -24,6 +24,14 @@ export function refreshWeather(location?: string): Promise<ApiResult<WeatherData
   return post<WeatherData>(`/weather/refresh${query}`);
 }
 
+export function fetchWeatherByCoords(lat: number, lon: number): Promise<ApiResult<WeatherData>> {
+  return get<WeatherData>(`/weather?lat=${lat}&lon=${lon}`);
+}
+
+export function refreshWeatherByCoords(lat: number, lon: number): Promise<ApiResult<WeatherData>> {
+  return post<WeatherData>(`/weather/refresh?lat=${lat}&lon=${lon}`);
+}
+
 export function fetchNews(): Promise<ApiResult<NewsData>> {
   return get<NewsData>('/news');
 }
