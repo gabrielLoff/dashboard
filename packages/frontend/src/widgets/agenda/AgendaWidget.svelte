@@ -1,18 +1,16 @@
 <script lang="ts">
-  import { fromStore } from 'svelte/store';
   import { Calendar, Clock, MapPin } from 'lucide-svelte';
   import WidgetCard from '../../components/WidgetCard.svelte';
   import { useAgendaQuery } from './agenda-api';
   import { isOk, type AgendaEvent } from '@dashboard/shared';
 
   const query = useAgendaQuery();
-  const result = fromStore(query);
-  const data = $derived(result.data);
-  const error = $derived(result.data && !isOk(result.data) ? result.data.error : '');
+  const data = $derived($query.data);
+  const error = $derived($query.data && !isOk($query.data) ? $query.data.error : '');
   const events = $derived<AgendaEvent[]>(data && isOk(data) ? data.data.events : []);
 
   function handleRefresh() {
-    result.refetch();
+    $query.refetch();
   }
 
   function formatDate(dateStr: string): string {
@@ -23,8 +21,8 @@
 
 <WidgetCard
   title="Agenda"
-  isLoading={result.isLoading}
-  isFetching={result.isFetching}
+  isLoading={$query.isLoading}
+  isFetching={$query.isFetching}
   error={error}
   onRefresh={handleRefresh}
 >

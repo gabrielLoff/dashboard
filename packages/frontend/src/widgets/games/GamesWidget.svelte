@@ -1,18 +1,16 @@
 <script lang="ts">
-  import { fromStore } from 'svelte/store';
   import { Gamepad2, Clock, ExternalLink } from 'lucide-svelte';
   import WidgetCard from '../../components/WidgetCard.svelte';
   import { useGamesQuery } from './games-api';
   import { isOk, type FreeGame } from '@dashboard/shared';
 
   const query = useGamesQuery();
-  const result = fromStore(query);
-  const data = $derived(result.data);
-  const error = $derived(result.data && !isOk(result.data) ? result.data.error : '');
+  const data = $derived($query.data);
+  const error = $derived($query.data && !isOk($query.data) ? $query.data.error : '');
   const games = $derived<FreeGame[]>(data && isOk(data) ? data.data.games : []);
 
   function handleRefresh() {
-    result.refetch();
+    $query.refetch();
   }
 
   function daysUntil(dateStr: string): string {
@@ -29,8 +27,8 @@
 
 <WidgetCard
   title="Free Games"
-  isLoading={result.isLoading}
-  isFetching={result.isFetching}
+  isLoading={$query.isLoading}
+  isFetching={$query.isFetching}
   error={error}
   onRefresh={handleRefresh}
 >

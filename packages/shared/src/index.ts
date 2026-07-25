@@ -10,3 +10,4 @@ export type {
   DashboardData,
 } from './api-types.ts';
 export { queryKeys } from './query-keys.ts';
+export { getWeatherCondition, type WeatherCondition } from './weather-codes.ts';
