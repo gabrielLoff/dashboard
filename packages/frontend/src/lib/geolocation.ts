@@ -3,9 +3,11 @@ export interface GeolocationCoords {
   lon: number;
 }
 
+export type GeolocationErrorCode = 1 | 2 | 3;
+
 export type GeolocationResult =
   | { ok: true; coords: GeolocationCoords }
-  | { ok: false; error: string };
+  | { ok: false; error: string; code?: GeolocationErrorCode };
 
 export function getCurrentPosition(): Promise<GeolocationResult> {
   return new Promise((resolve) => {
@@ -25,9 +27,19 @@ export function getCurrentPosition(): Promise<GeolocationResult> {
         });
       },
       (error) => {
-        resolve({ ok: false, error: `Geolocation denied: ${error.message}` });
+        const code = error.code as GeolocationErrorCode;
+
+        if (code === 1) {
+          resolve({ ok: false, error: 'Geolocation denied: user denied permission', code: 1 });
+        } else if (code === 2) {
+          resolve({ ok: false, error: 'Geolocation unavailable: position could not be determined', code: 2 });
+        } else if (code === 3) {
+          resolve({ ok: false, error: 'Geolocation timeout: request timed out', code: 3 });
+        } else {
+          resolve({ ok: false, error: `Geolocation error: ${error.message}` });
+        }
       },
-      { timeout: 5000, maximumAge: 600_000 },
+      { timeout: 10_000, maximumAge: 600_000 },
     );
   });
 }

@@ -21,19 +21,6 @@ interface OpenMeteoResponse {
   current: OpenMeteoCurrent;
 }
 
-interface NominatimResponse {
-  address?: {
-    city?: string;
-    town?: string;
-    village?: string;
-    municipality?: string;
-    county?: string;
-    state?: string;
-    country?: string;
-  };
-  name?: string;
-}
-
 async function geocode(city: string): Promise<ApiResult<GeocodingResult>> {
   try {
     const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1`;
@@ -52,35 +39,6 @@ async function geocode(city: string): Promise<ApiResult<GeocodingResult>> {
     return { ok: true, data: json.results[0] };
   } catch (e) {
     return err(e instanceof Error ? e.message : 'Geocoding request failed');
-  }
-}
-
-async function reverseGeocode(lat: number, lon: number): Promise<ApiResult<string>> {
-  try {
-    const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&zoom=10`;
-    const res = await fetch(url, {
-      headers: { 'User-Agent': 'PersonalDashboard/1.0' },
-    });
-
-    if (!res.ok) {
-      return err(`Reverse geocoding failed: ${res.status}`);
-    }
-
-    const json = (await res.json()) as NominatimResponse;
-
-    const name = json.address?.city
-      ?? json.address?.town
-      ?? json.address?.village
-      ?? json.address?.municipality
-      ?? json.address?.county
-      ?? json.address?.state
-      ?? json.address?.country
-      ?? json.name
-      ?? `${lat.toFixed(2)}, ${lon.toFixed(2)}`;
-
-    return { ok: true, data: name };
-  } catch (e) {
-    return err(e instanceof Error ? e.message : 'Reverse geocoding request failed');
   }
 }
 
@@ -142,16 +100,10 @@ export async function fetchWeatherByCoords(lat: number, lon: number): Promise<Ap
   }
 
   try {
-    const [forecastResult, reverseResult] = await Promise.all([
-      fetchForecast(lat, lon),
-      reverseGeocode(lat, lon),
-    ]);
-
+    const forecastResult = await fetchForecast(lat, lon);
     if (!forecastResult.ok) return forecastResult;
 
-    const name = reverseResult.ok ? reverseResult.data : `${lat.toFixed(2)}, ${lon.toFixed(2)}`;
-
-    return { ok: true, data: buildWeatherData(name, forecastResult.data) };
+    return { ok: true, data: buildWeatherData(`${lat.toFixed(2)}, ${lon.toFixed(2)}`, forecastResult.data) };
   } catch (e) {
     return err(e instanceof Error ? e.message : 'Failed to fetch weather by coordinates');
   }

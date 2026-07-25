@@ -7,14 +7,17 @@
   import type { ApiResult, WeatherData } from '@dashboard/shared';
   import { fetchWeather, fetchWeatherByCoords } from '$lib/api-client';
   import { getCurrentPosition, type GeolocationCoords } from '$lib/geolocation';
-  import { CloudSun, Thermometer, Droplets, Wind } from 'lucide-svelte';
+  import { loadLocationCache, saveLocationCache, locationCacheToCoords } from '$lib/location-cache';
+  import { resolveCityName, resolveCityFromIP } from '$lib/reverse-geocode';
+  import { CloudSun, Thermometer, Droplets, Wind, MapPin } from 'lucide-svelte';
   import WidgetCard from '../../components/WidgetCard.svelte';
 
   const DEFAULT_LOCATION = 'Porto Alegre';
 
   const coords = writable<GeolocationCoords | null>(null);
-  let geoPending = $state(true);
-  let geoFallback = $state(false);
+  let geoPending = $state(false);
+  let geoDenied = $state(false);
+  let displayLocation = $state<string | null>(null);
 
   const queryOptions = derived(coords, ($coords): CreateQueryOptions<ApiResult<WeatherData>> => {
     if ($coords) {
@@ -38,15 +41,43 @@
   const data = $derived($query.data as ApiResult<WeatherData> | undefined);
   const error = $derived(data && !isOk(data) ? data.error : '');
 
-  onMount(async () => {
+  async function resolveAndSetLocation(lat: number, lon: number) {
+    const city = await resolveCityName(lat, lon);
+    displayLocation = city ?? `${lat.toFixed(2)}, ${lon.toFixed(2)}`;
+  }
+
+  onMount(() => {
+    const cached = loadLocationCache();
+    if (cached) {
+      const cachedCoords = locationCacheToCoords(cached);
+      if (cachedCoords) {
+        coords.set(cachedCoords);
+        resolveAndSetLocation(cachedCoords.lat, cachedCoords.lon);
+      }
+    }
+  });
+
+  async function useGeolocation() {
+    geoDenied = false;
+    geoPending = true;
     const result = await getCurrentPosition();
     geoPending = false;
     if (result.ok) {
       coords.set(result.coords);
+      displayLocation = null;
+      resolveAndSetLocation(result.coords.lat, result.coords.lon);
+      saveLocationCache({ type: 'coords', lat: result.coords.lat, lon: result.coords.lon, timestamp: new Date().toISOString() });
     } else {
-      geoFallback = true;
+      const ipCity = await resolveCityFromIP();
+      if (ipCity) {
+        displayLocation = `${ipCity} (approximate)`;
+        geoDenied = false;
+      } else {
+        geoDenied = true;
+      }
+      saveLocationCache({ type: 'city', city: DEFAULT_LOCATION, timestamp: new Date().toISOString() });
     }
-  });
+  }
 
   function handleRefresh() {
     $query.refetch();
@@ -70,12 +101,22 @@
           <span class="text-4xl font-light">{data.data.temperature}°C</span>
           <span class="text-sm text-neutral-500 dark:text-neutral-400">{data.data.condition}</span>
         </div>
-        <p class="text-xs text-neutral-400">
-          {data.data.location}
-          {#if geoFallback}
-            <span class="text-neutral-500"> (default)</span>
+        <div class="flex items-center gap-2">
+          <p class="text-xs text-neutral-400">{displayLocation ?? data.data.location}</p>
+          {#if !coords}
+            <button
+              onclick={useGeolocation}
+              disabled={geoPending}
+              class="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs text-neutral-400 transition-colors hover:bg-neutral-100 hover:text-neutral-600 disabled:opacity-50 dark:hover:bg-neutral-800 dark:hover:text-neutral-300"
+              title="Use my location"
+            >
+              <MapPin class="h-3 w-3" />
+              {geoPending ? 'Locating...' : 'Use my location'}
+            </button>
+          {:else if geoDenied}
+            <span class="text-xs text-neutral-500">(location unavailable)</span>
           {/if}
-        </p>
+        </div>
         <div class="flex gap-4 text-xs text-neutral-500 dark:text-neutral-400">
           <span class="flex items-center gap-1"><Thermometer class="h-3 w-3" /> Feels {data.data.feelsLike}°C</span>
           <span class="flex items-center gap-1"><Droplets class="h-3 w-3" /> {data.data.humidity}%</span>
