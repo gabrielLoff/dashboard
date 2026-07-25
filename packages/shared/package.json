@@ -1,0 +1,25 @@
+{
+  "name": "@dashboard/shared",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./api-types": "./src/api-types.ts",
+    "./result": "./src/result.ts",
+    "./query-keys": "./src/query-keys.ts"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint src/"
+  },
+  "devDependencies": {
+    "@dashboard/eslint-config": "workspace:*",
+    "@types/node": "^22.15.3",
+    "eslint": "^9.26.0",
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.32.1",
+    "vitest": "^3.1.3"
+  }
+}

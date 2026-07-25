@@ -1,0 +1,20 @@
+{
+  "name": "dashboard",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently -n server,frontend -c blue,green \"pnpm -F server dev\" \"pnpm -F frontend dev\"",
+    "dev:server": "pnpm -F server dev",
+    "dev:frontend": "pnpm -F frontend dev",
+    "build": "pnpm -r build",
+    "test": "pnpm -r test",
+    "lint": "pnpm -r lint",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1",
+    "prettier": "^3.5.3",
+    "prettier-plugin-svelte": "^3.3.3",
+    "typescript": "^5.8.3"
+  }
+}

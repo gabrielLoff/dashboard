@@ -1,0 +1,15 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "src",
+    "types": ["svelte"],
+    "verbatimModuleSyntax": true,
+    "paths": {
+      "$lib/*": ["./src/lib/*"],
+      "$components/*": ["./src/components/*"],
+      "$widgets/*": ["./src/widgets/*"]
+    }
+  },
+  "include": ["src/**/*.ts", "src/**/*.svelte"]
+}
