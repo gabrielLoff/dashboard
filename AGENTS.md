@@ -14,6 +14,79 @@ pnpm lint             # Run all lints
 pnpm approve-builds   # Required if esbuild postinstall scripts are blocked after install
 ```
 
+## Git workflow
+
+**One ticket per branch.** Branch off `main`, squash merge back. Delete branch after merge.
+
+| Type | Branch | Commit example |
+|---|---|---|
+| Feature | `feat/<#>-<slug>` | `feat(#5): add coordinate-based weather` |
+| Fix | `fix/<#>-<slug>` | `fix(#1): prevent refresh TypeError` |
+| Chore | `chore/<#>-<slug>` | `chore(#3): bump deps` |
+
+```bash
+git checkout main && git pull
+git checkout -b feat/5-coordinate-weather
+# ... work ...
+git checkout main && git pull
+git merge --squash feat/5-coordinate-weather
+git commit -m "feat(#5): add coordinate-based weather endpoint"
+git push
+git branch -d feat/5-coordinate-weather && git push origin --delete feat/5-coordinate-weather
+```
+
+No PRs (solo project). Keep `main` green — run `pnpm test && pnpm lint` before merging. See `CONTRIBUTING.md` for full details.
+
+## Parallel work with worktrees
+
+When multiple tickets are independent (no shared files), implement them in parallel using git worktrees. Each worktree gets its own branch, dependencies, and `/implement` session.
+
+### When to use
+
+- Multiple tickets on the frontier (all blockers resolved)
+- Tickets touch different files/packages
+- Each ticket fits in a single context window
+
+### Dependency rule
+
+If Ticket B is blocked by Ticket A, **merge A into main first**, then branch B from updated main. Never stack branches.
+
+### Workflow
+
+```bash
+# 1. Make sure main is up to date
+git checkout main && git pull
+
+# 2. Create worktrees (one per ticket)
+git worktree add ../dashboard-<#>-<slug> -b feat/<#>-<slug> main
+git worktree add ../dashboard-<#>-<slug> -b feat/<#>-<slug> main
+
+# 3. Install deps in each worktree
+cd ../dashboard-<#>-<slug> && pnpm install
+cd ../dashboard-<#>-<slug> && pnpm install
+
+# 4. Run /implement on each worktree (parallel agents)
+#    Each agent: implement, type-check, test, commit, push
+
+# 5. Open PRs (optional) or squash-merge directly
+gh pr create --head feat/<#>-<slug> --base main --title "..." --body-file ...
+
+# 6. After ALL parallel work is done, clean up
+git worktree remove ../dashboard-<#>-<slug>
+git branch -d feat/<#>-<slug>
+
+# 7. Final check on main after all merges
+git checkout main && git pull
+pnpm test
+```
+
+### Key rules
+
+- Each worktree runs `pnpm test` before commit
+- Keep worktrees until the **entire batch** finishes — don't clean up per-ticket
+- After all merges, run `pnpm test` on main as a final gate
+- Branch naming follows the existing convention: `feat/<#>-<slug>`, `fix/<#>-<slug>`
+
 ## Architecture
 
 **pnpm workspaces monorepo** with 4 packages under `packages/`:
