@@ -42,8 +42,12 @@
   const error = $derived(data && !isOk(data) ? data.error : '');
 
   async function resolveAndSetLocation(lat: number, lon: number) {
-    const city = await resolveCityName(lat, lon);
-    displayLocation = city ?? `${lat.toFixed(2)}, ${lon.toFixed(2)}`;
+    const location = await resolveCityName(lat, lon);
+    if (location) {
+      displayLocation = location.country ? `${location.city}, ${location.country}` : location.city;
+    } else {
+      displayLocation = `${lat.toFixed(2)}, ${lon.toFixed(2)}`;
+    }
   }
 
   onMount(() => {
@@ -68,9 +72,10 @@
       resolveAndSetLocation(result.coords.lat, result.coords.lon);
       saveLocationCache({ type: 'coords', lat: result.coords.lat, lon: result.coords.lon, timestamp: new Date().toISOString() });
     } else {
-      const ipCity = await resolveCityFromIP();
-      if (ipCity) {
-        displayLocation = `${ipCity} (approximate)`;
+      const ipLocation = await resolveCityFromIP();
+      if (ipLocation) {
+        const label = ipLocation.country ? `${ipLocation.city}, ${ipLocation.country}` : ipLocation.city;
+        displayLocation = `${label} (approximate)`;
         geoDenied = false;
       } else {
         geoDenied = true;
