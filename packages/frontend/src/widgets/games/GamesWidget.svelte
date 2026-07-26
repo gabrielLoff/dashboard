@@ -2,14 +2,26 @@
   import { Gamepad2, Clock, ExternalLink } from 'lucide-svelte';
   import WidgetCard from '../../components/WidgetCard.svelte';
   import { useGamesQuery } from './games-api';
-  import { isOk, type FreeGame } from '@dashboard/shared';
+  import { isOk, queryKeys, type FreeGame } from '@dashboard/shared';
+  import { refreshGames } from '$lib/api-client';
+  import { queryClient } from '$lib/query-client';
+  import toast from 'svelte-french-toast';
 
   const query = useGamesQuery();
   const data = $derived($query.data);
   const error = $derived($query.data && !isOk($query.data) ? $query.data.error : '');
   const games = $derived<FreeGame[]>(data && isOk(data) ? data.data.games : []);
 
-  function handleRefresh() {
+  async function handleRefresh(opts?: { clear?: boolean }) {
+    if (opts?.clear) {
+      const result = await refreshGames();
+      if (isOk(result)) {
+        queryClient.setQueryData(queryKeys.games.list(), result);
+        queryClient.invalidateQueries({ queryKey: queryKeys.games.list() });
+        toast.success('Cache cleared');
+      }
+      return;
+    }
     $query.refetch();
   }
 
