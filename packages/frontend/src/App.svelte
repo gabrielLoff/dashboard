@@ -8,6 +8,7 @@
   import NewsWidget from '$widgets/news/NewsWidget.svelte';
   import AgendaWidget from '$widgets/agenda/AgendaWidget.svelte';
   import GamesWidget from '$widgets/games/GamesWidget.svelte';
+  import { Toaster } from 'svelte-french-toast';
 
   onMount(() => {
     themeStore.init();
@@ -15,6 +16,7 @@
 </script>
 
 <QueryClientProvider client={queryClient}>
+  <Toaster />
   <div class="mx-auto min-h-screen max-w-7xl px-4 py-6">
     <header class="mb-6 flex items-center justify-between">
       <div>

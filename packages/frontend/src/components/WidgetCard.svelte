@@ -18,7 +18,7 @@
     isLoading: boolean;
     isFetching: boolean;
     error: string;
-    onRefresh: () => void;
+    onRefresh: (opts?: { clear?: boolean }) => void;
     children: Snippet;
     class?: string;
   } = $props();
@@ -33,10 +33,10 @@
       <h3 class="text-sm font-semibold text-neutral-700 dark:text-neutral-200">{title}</h3>
     </div>
     <button
-      onclick={onRefresh}
+      onclick={(e) => onRefresh(e.altKey ? { clear: true } : undefined)}
       disabled={isFetching}
       class="rounded-md p-1.5 text-neutral-400 transition-colors hover:bg-neutral-100 hover:text-neutral-600 disabled:opacity-50 dark:hover:bg-neutral-800 dark:hover:text-neutral-300"
-      title="Refresh"
+      title="Refresh · Alt+click to clear cache"
     >
       <RefreshCw class={cn('h-4 w-4', isFetching && 'animate-spin')} />
     </button>
@@ -52,7 +52,7 @@
         <AlertCircle class="h-8 w-8 text-red-400" />
         <p class="text-sm text-red-500">{error}</p>
         <button
-          onclick={onRefresh}
+          onclick={() => onRefresh()}
           class="rounded-md bg-neutral-100 px-3 py-1 text-xs font-medium text-neutral-600 hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700"
         >
           Retry
