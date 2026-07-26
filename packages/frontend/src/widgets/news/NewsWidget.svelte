@@ -2,15 +2,27 @@
   import { Newspaper, ExternalLink } from 'lucide-svelte';
   import WidgetCard from '../../components/WidgetCard.svelte';
   import { useNewsQuery } from './news-api';
-  import { isOk, type NewsItem } from '@dashboard/shared';
+  import { isOk, queryKeys, type NewsItem } from '@dashboard/shared';
+  import { queryClient } from '$lib/query-client';
+  import { refreshNews } from '$lib/api-client';
+  import toast from 'svelte-french-toast';
 
   const query = useNewsQuery();
   const data = $derived($query.data);
   const error = $derived($query.data && !isOk($query.data) ? $query.data.error : '');
   const items = $derived<NewsItem[]>(data && isOk(data) ? data.data.items : []);
 
-  function handleRefresh() {
-    $query.refetch();
+  async function handleRefresh(opts?: { clear?: boolean }) {
+    if (opts?.clear) {
+      const result = await refreshNews();
+      if (isOk(result)) {
+        queryClient.setQueryData(queryKeys.news.list(), result);
+        queryClient.invalidateQueries({ queryKey: queryKeys.news.list() });
+        toast.success('Cache cleared');
+      }
+    } else {
+      $query.refetch();
+    }
   }
 </script>
 
