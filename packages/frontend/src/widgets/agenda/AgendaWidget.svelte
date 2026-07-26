@@ -2,15 +2,27 @@
   import { Calendar, Clock, MapPin } from 'lucide-svelte';
   import WidgetCard from '../../components/WidgetCard.svelte';
   import { useAgendaQuery } from './agenda-api';
-  import { isOk, type AgendaEvent } from '@dashboard/shared';
+  import { isOk, type AgendaEvent, queryKeys } from '@dashboard/shared';
+  import { queryClient } from '$lib/query-client';
+  import { refreshAgenda } from '$lib/api-client';
+  import toast from 'svelte-french-toast';
 
   const query = useAgendaQuery();
   const data = $derived($query.data);
   const error = $derived($query.data && !isOk($query.data) ? $query.data.error : '');
   const events = $derived<AgendaEvent[]>(data && isOk(data) ? data.data.events : []);
 
-  function handleRefresh() {
-    $query.refetch();
+  async function handleRefresh(opts?: { clear?: boolean }) {
+    if (opts?.clear) {
+      const result = await refreshAgenda();
+      if (isOk(result)) {
+        queryClient.setQueryData(queryKeys.agenda.list(), result);
+        queryClient.invalidateQueries({ queryKey: queryKeys.agenda.list() });
+        toast.success('Cache cleared');
+      }
+    } else {
+      $query.refetch();
+    }
   }
 
   function formatDate(dateStr: string): string {
