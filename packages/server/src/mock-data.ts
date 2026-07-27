@@ -52,31 +52,57 @@ const mockNews: NewsData = {
   updatedAt: new Date().toISOString(),
 };
 
+const today = new Date();
+const tomorrow = new Date(today.getTime() + 86400000);
+const dayAfterTomorrow = new Date(today.getTime() + 172800000);
+const fmt = (d: Date) => d.toISOString().split('T')[0]!;
+
 const mockAgenda: AgendaData = {
   events: [
     {
       id: '1',
       title: 'Team Standup',
-      date: new Date().toISOString().split('T')[0]!,
+      date: fmt(today),
       time: '09:00',
       location: 'Google Meet',
       description: 'Daily sync with the engineering team.',
+      status: 'confirmed',
     },
     {
       id: '2',
-      title: 'Dentist Appointment',
-      date: new Date(Date.now() + 86400000).toISOString().split('T')[0]!,
-      time: '14:30',
-      location: 'Dr. Silva - Rua dos Andradas, 1542',
-      description: 'Six-month checkup.',
+      title: 'Design Brainstorm',
+      date: fmt(today),
+      time: '14:00',
+      location: 'Conference Room A',
+      description: 'Brainstorming session for the new landing page redesign.',
+      status: 'tentative',
     },
     {
       id: '3',
-      title: 'Project Review',
-      date: new Date(Date.now() + 172800000).toISOString().split('T')[0]!,
-      time: '11:00',
-      location: 'Conference Room B',
-      description: 'Quarterly review of the dashboard project.',
+      title: 'Dentist Appointment',
+      date: fmt(tomorrow),
+      time: '10:30',
+      location: 'Dr. Silva - Rua dos Andradas, 1542',
+      description: 'Six-month checkup.',
+      status: 'confirmed',
+    },
+    {
+      id: '4',
+      title: 'Client Workshop',
+      date: fmt(tomorrow),
+      time: '15:00',
+      location: 'Zoom',
+      description: 'Quarterly workshop with the client to align on roadmap priorities.',
+      status: 'cancelled',
+    },
+    {
+      id: '5',
+      title: 'Sprint Retrospective',
+      date: fmt(dayAfterTomorrow),
+      time: '16:00',
+      location: 'Google Meet',
+      description: 'End-of-sprint retro to discuss what went well and what to improve.',
+      status: 'confirmed',
     },
   ],
   updatedAt: new Date().toISOString(),

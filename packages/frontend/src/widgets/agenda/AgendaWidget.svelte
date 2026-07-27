@@ -44,9 +44,21 @@
   {#snippet children()}
     <div class="flex flex-col gap-3">
       {#each events as event (event.id)}
-        <div class="rounded-lg border border-neutral-100 p-3 dark:border-neutral-800">
-          <p class="text-sm font-medium">{event.title}</p>
-          <div class="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-neutral-500 dark:text-neutral-400">
+        {@const cancelled = event.status === 'cancelled'}
+        {@const tentative = event.status === 'tentative'}
+        <div class="rounded-lg border border-neutral-100 p-3 dark:border-neutral-800"
+             class:opacity-50={cancelled || tentative}
+             class:opacity-40={cancelled}
+        >
+          <p class="text-sm font-medium"
+             class:line-through={cancelled}
+             class:text-neutral-400={cancelled}
+             class:dark:text-neutral-500={cancelled}
+             class:italic={tentative}
+          >{event.title}</p>
+          <div class="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-neutral-500 dark:text-neutral-400"
+               class:opacity-70={cancelled}
+          >
             <span class="flex items-center gap-1"><Calendar class="h-3 w-3" /> {formatDate(event.date)}</span>
             {#if event.time}
               <span class="flex items-center gap-1"><Clock class="h-3 w-3" /> {event.time}</span>

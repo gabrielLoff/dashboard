@@ -30,6 +30,7 @@ export interface AgendaEvent {
   time: string;
   location: string;
   description: string;
+  status: 'confirmed' | 'tentative' | 'cancelled';
 }
 
 export interface AgendaData {
