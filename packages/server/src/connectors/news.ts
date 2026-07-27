@@ -12,7 +12,7 @@ export async function fetchNews(): Promise<ApiResult<NewsData>> {
 
   try {
     const res = await fetch(
-      `${BASE_URL}/top-headlines?category=technology&apiKey=${API_KEY}&pageSize=5`,
+      `${BASE_URL}/top-headlines?apiKey=${API_KEY}&pageSize=5`,
     );
 
     if (!res.ok) {

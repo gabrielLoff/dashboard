@@ -3,7 +3,7 @@ import { fetchNews } from '../connectors/news.ts';
 import { TTLCache } from '../cache.ts';
 import type { NewsData } from '@dashboard/shared';
 
-const TTL = Number(process.env.CACHE_TTL_NEWS) * 1000 || 1_800_000;
+const TTL = Number(process.env.CACHE_TTL_NEWS) * 1000 || 900_000;
 const cache = new TTLCache<NewsData>(TTL);
 
 export const newsRoute = new Hono()
