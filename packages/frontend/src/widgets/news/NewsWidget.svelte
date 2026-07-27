@@ -17,11 +17,11 @@
       const result = await refreshNews();
       if (isOk(result)) {
         queryClient.setQueryData(queryKeys.news.list(), result);
-        queryClient.invalidateQueries({ queryKey: queryKeys.news.list() });
+        await queryClient.invalidateQueries({ queryKey: queryKeys.news.list() });
         toast.success('Cache cleared');
       }
     } else {
-      $query.refetch();
+      await $query.refetch();
     }
   }
 </script>

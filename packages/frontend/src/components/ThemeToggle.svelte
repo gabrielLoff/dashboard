@@ -1,16 +1,14 @@
 <script lang="ts">
   import { Sun, Moon } from 'lucide-svelte';
   import { themeStore } from '$lib/theme.svelte';
-
-  const { current, toggle } = themeStore;
 </script>
 
 <button
-  onclick={toggle}
+  onclick={() => { themeStore.toggle(); }}
   class="rounded-lg p-2 text-neutral-500 transition-colors hover:bg-neutral-200 dark:text-neutral-400 dark:hover:bg-neutral-800"
   title="Toggle theme"
 >
-  {#if current === 'dark'}
+  {#if themeStore.current === 'dark'}
     <Sun class="h-5 w-5" />
   {:else}
     <Moon class="h-5 w-5" />

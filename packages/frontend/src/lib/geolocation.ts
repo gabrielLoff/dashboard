@@ -33,10 +33,8 @@ export function getCurrentPosition(): Promise<GeolocationResult> {
           resolve({ ok: false, error: 'Geolocation denied: user denied permission', code: 1 });
         } else if (code === 2) {
           resolve({ ok: false, error: 'Geolocation unavailable: position could not be determined', code: 2 });
-        } else if (code === 3) {
-          resolve({ ok: false, error: 'Geolocation timeout: request timed out', code: 3 });
         } else {
-          resolve({ ok: false, error: `Geolocation error: ${error.message}` });
+          resolve({ ok: false, error: 'Geolocation timeout: request timed out', code: 3 });
         }
       },
       { timeout: 10_000, maximumAge: 600_000 },

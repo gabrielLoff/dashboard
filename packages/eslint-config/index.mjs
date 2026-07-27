@@ -1,11 +1,15 @@
 import tseslint from 'typescript-eslint';
+import { fileURLToPath } from 'node:url';
+import { dirname, resolve } from 'node:path';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 export default tseslint.config({
   extends: [...tseslint.configs.strictTypeChecked, ...tseslint.configs.stylisticTypeChecked],
   languageOptions: {
     parserOptions: {
       projectService: true,
-      tsconfigRootDir: import.meta.dirname,
+      tsconfigRootDir: resolve(__dirname, '../..'),
     },
   },
   rules: {

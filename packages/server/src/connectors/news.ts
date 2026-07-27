@@ -32,7 +32,7 @@ export async function fetchNews(): Promise<ApiResult<NewsData>> {
           source: a.source.name,
           url: a.url,
           publishedAt: a.publishedAt,
-          summary: a.description ?? '',
+          summary: a.description || '',
         })),
         updatedAt: new Date().toISOString(),
       },

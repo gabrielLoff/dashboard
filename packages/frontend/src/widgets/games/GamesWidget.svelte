@@ -17,12 +17,12 @@
       const result = await refreshGames();
       if (isOk(result)) {
         queryClient.setQueryData(queryKeys.games.list(), result);
-        queryClient.invalidateQueries({ queryKey: queryKeys.games.list() });
+        await queryClient.invalidateQueries({ queryKey: queryKeys.games.list() });
         toast.success('Cache cleared');
       }
       return;
     }
-    $query.refetch();
+    await $query.refetch();
   }
 
   function daysUntil(dateStr: string): string {

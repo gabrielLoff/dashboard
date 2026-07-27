@@ -42,10 +42,10 @@ export async function fetchAgenda(): Promise<ApiResult<AgendaData>> {
       ok: true,
       data: {
         events: json.items.map((e, i) => ({
-          id: e.id ?? String(i),
-          title: e.summary ?? 'Untitled',
+          id: e.id || String(i),
+          title: e.summary || 'Untitled',
           date: e.start.dateTime
-            ? e.start.dateTime.split('T')[0]!
+            ? e.start.dateTime.split('T')[0]
             : e.start.date ?? '',
           time: e.start.dateTime
             ? e.start.dateTime.split('T')[1]?.slice(0, 5) ?? ''

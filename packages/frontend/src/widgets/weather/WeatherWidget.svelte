@@ -24,6 +24,7 @@
   const queryOptions = derived(coords, ($coords): CreateQueryOptions<ApiResult<WeatherData>> => {
     if ($coords) {
       return {
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
         queryKey: queryKeys.weather.byCoords($coords.lat, $coords.lon) as unknown as string[],
         queryFn: () => fetchWeatherByCoords($coords.lat, $coords.lon),
         staleTime: 5 * 60 * 1000,
@@ -31,6 +32,7 @@
       };
     }
     return {
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
       queryKey: queryKeys.weather.current() as unknown as string[],
       queryFn: () => fetchWeather(DEFAULT_LOCATION),
       staleTime: 5 * 60 * 1000,
@@ -40,7 +42,7 @@
 
   const query = createQuery(queryOptions);
 
-  const data = $derived($query.data as ApiResult<WeatherData> | undefined);
+  const data = $derived($query.data);
   const error = $derived(data && !isOk(data) ? data.error : '');
 
   async function resolveAndSetLocation(lat: number, lon: number) {
@@ -58,7 +60,7 @@
       const cachedCoords = locationCacheToCoords(cached);
       if (cachedCoords) {
         coords.set(cachedCoords);
-        resolveAndSetLocation(cachedCoords.lat, cachedCoords.lon);
+        void resolveAndSetLocation(cachedCoords.lat, cachedCoords.lon);
       }
     }
   });
@@ -71,7 +73,7 @@
     if (result.ok) {
       coords.set(result.coords);
       displayLocation = null;
-      resolveAndSetLocation(result.coords.lat, result.coords.lon);
+      void resolveAndSetLocation(result.coords.lat, result.coords.lon);
       saveLocationCache({ type: 'coords', lat: result.coords.lat, lon: result.coords.lon, timestamp: new Date().toISOString() });
     } else {
       const ipLocation = await resolveCityFromIP();
@@ -100,7 +102,7 @@
         toast.success('Cache cleared');
       }
     } else {
-      $query.refetch();
+      await $query.refetch();
     }
   }
 </script>
@@ -124,7 +126,7 @@
         </div>
         <div class="flex items-center gap-2">
           <p class="text-xs text-neutral-400">{displayLocation ?? data.data.location}</p>
-          {#if !coords}
+          {#if !$coords}
             <button
               onclick={useGeolocation}
               disabled={geoPending}

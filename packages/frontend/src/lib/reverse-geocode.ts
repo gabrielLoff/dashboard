@@ -28,10 +28,10 @@ export async function resolveCityName(lat: number, lon: number): Promise<CityLoc
 
     const json = (await res.json()) as BigDataCloudResponse;
 
-    const city = json.city || json.locality || json.principalSubdivision || null;
+    const city = json.city ?? json.locality ?? json.principalSubdivision ?? null;
     if (!city) return null;
 
-    return { city, country: json.countryName || '' };
+    return { city, country: json.countryName ?? '' };
   } catch {
     return null;
   }
@@ -47,10 +47,10 @@ export async function resolveCityFromIP(): Promise<CityLocation | null> {
 
     const json = (await res.json()) as BigDataCloudResponse;
 
-    const city = json.city || json.locality || json.principalSubdivision || null;
+    const city = json.city ?? json.locality ?? json.principalSubdivision ?? null;
     if (!city) return null;
 
-    return { city, country: json.countryName || '' };
+    return { city, country: json.countryName ?? '' };
   } catch {
     return null;
   }

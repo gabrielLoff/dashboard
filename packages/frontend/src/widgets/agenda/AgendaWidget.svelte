@@ -17,11 +17,11 @@
       const result = await refreshAgenda();
       if (isOk(result)) {
         queryClient.setQueryData(queryKeys.agenda.list(), result);
-        queryClient.invalidateQueries({ queryKey: queryKeys.agenda.list() });
+        await queryClient.invalidateQueries({ queryKey: queryKeys.agenda.list() });
         toast.success('Cache cleared');
       }
     } else {
-      $query.refetch();
+      await $query.refetch();
     }
   }
 

@@ -1,4 +1,4 @@
-import { ok, err, type ApiResult } from '@dashboard/shared';
+import { ok, type ApiResult } from '@dashboard/shared';
 import type {
   WeatherData,
   NewsData,
@@ -55,7 +55,7 @@ const mockNews: NewsData = {
 const today = new Date();
 const tomorrow = new Date(today.getTime() + 86400000);
 const dayAfterTomorrow = new Date(today.getTime() + 172800000);
-const fmt = (d: Date) => d.toISOString().split('T')[0]!;
+const fmt = (d: Date) => d.toISOString().split('T')[0];
 
 const mockAgenda: AgendaData = {
   events: [
@@ -116,7 +116,7 @@ const mockGames: FreeGamesData = {
       platform: 'PC, Steam',
       source: 'Game',
       url: 'https://www.gamerpower.com/open/celeste',
-      expiryDate: new Date(Date.now() + 604800000).toISOString().split('T')[0]!,
+      expiryDate: new Date(Date.now() + 604800000).toISOString().split('T')[0],
       imageUrl: 'https://placehold.co/200x120/6366f1/ffffff?text=Celeste',
     },
     {
@@ -125,7 +125,7 @@ const mockGames: FreeGamesData = {
       platform: 'PC, Steam, DRM-Free',
       source: 'Game',
       url: 'https://www.gamerpower.com/open/into-the-breach',
-      expiryDate: new Date(Date.now() + 604800000).toISOString().split('T')[0]!,
+      expiryDate: new Date(Date.now() + 604800000).toISOString().split('T')[0],
       imageUrl: 'https://placehold.co/200x120/8b5cf6/ffffff?text=ITB',
     },
     {
@@ -134,7 +134,7 @@ const mockGames: FreeGamesData = {
       platform: 'PC, DRM-Free',
       source: 'Game',
       url: 'https://www.gamerpower.com/open/hollow-knight',
-      expiryDate: new Date(Date.now() + 2592000000).toISOString().split('T')[0]!,
+      expiryDate: new Date(Date.now() + 2592000000).toISOString().split('T')[0],
       imageUrl: 'https://placehold.co/200x120/ec4899/ffffff?text=HK',
     },
     {

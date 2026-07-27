@@ -26,6 +26,12 @@ importers:
       eslint:
         specifier: ^9.0.0
         version: 9.39.5(jiti@2.7.0)(supports-color@8.1.1)
+      eslint-plugin-svelte:
+        specifier: ^3.0.0
+        version: 3.22.0(eslint@9.39.5(jiti@2.7.0)(supports-color@8.1.1))(svelte@5.56.7(@typescript-eslint/types@8.65.0))
+      svelte-eslint-parser:
+        specifier: ^1.0.0
+        version: 1.8.0(svelte@5.56.7(@typescript-eslint/types@8.65.0))
       typescript-eslint:
         specifier: ^8.0.0
         version: 8.65.0(eslint@9.39.5(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)(typescript@5.9.3)

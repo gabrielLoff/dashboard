@@ -1,7 +1,7 @@
-type CacheEntry<T> = {
+interface CacheEntry<T> {
   data: T;
   expiresAt: number;
-};
+}
 
 export class TTLCache<T> {
   private store = new Map<string, CacheEntry<T>>();
