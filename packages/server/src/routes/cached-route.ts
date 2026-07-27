@@ -4,11 +4,13 @@ import type { ApiResult } from '@dashboard/shared';
 
 type FetchFn<T> = (ctx: { req: { query: (key: string) => string | undefined } }) => Promise<ApiResult<T>>;
 type CacheKeyFn = (ctx: { req: { query: (key: string) => string | undefined } }) => string;
+type OnRefreshFn = () => void | Promise<void>;
 
 export function createCachedRoute<T>(
   fetchFn: FetchFn<T>,
   ttlMs: number,
   cacheKeyFn: CacheKeyFn,
+  onRefresh?: OnRefreshFn,
 ): Hono {
   const cache = new TTLCache<T>(ttlMs);
 
@@ -25,6 +27,10 @@ export function createCachedRoute<T>(
     .post('/refresh', async (c) => {
       const key = cacheKeyFn(c);
       cache.delete(key);
+
+      if (onRefresh) {
+        await onRefresh();
+      }
 
       const result = await fetchFn(c);
       if (result.ok) cache.set(key, result.data);

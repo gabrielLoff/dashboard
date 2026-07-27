@@ -124,4 +124,50 @@ describe('createCachedRoute', () => {
     const ctx = fetchFn.mock.calls[0][0];
     expect(ctx.req.query('foo')).toBe('bar');
   });
+
+  it('calls onRefresh callback during POST /refresh', async () => {
+    const onRefresh = vi.fn();
+    fetchFn.mockResolvedValue(ok({ value: 'fresh' }));
+    const route = createCachedRoute(fetchFn, 60_000, () => 'key', onRefresh);
+    const app = createApp(route);
+
+    await app.request('/api/test');
+    await app.request('/api/test/refresh', { method: 'POST' });
+
+    expect(onRefresh).toHaveBeenCalledTimes(1);
+    expect(fetchFn).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not call onRefresh during GET requests', async () => {
+    const onRefresh = vi.fn();
+    fetchFn.mockResolvedValue(ok({ value: 'hello' }));
+    const route = createCachedRoute(fetchFn, 60_000, () => 'key', onRefresh);
+    const app = createApp(route);
+
+    await app.request('/api/test');
+    await app.request('/api/test');
+
+    expect(onRefresh).not.toHaveBeenCalled();
+    expect(fetchFn).toHaveBeenCalledTimes(1);
+  });
+
+  it('allows onRefresh to bust external caches before re-fetch', async () => {
+    const onRefresh = vi.fn();
+    fetchFn
+      .mockResolvedValueOnce(ok({ value: 'cached' }))
+      .mockResolvedValueOnce(ok({ value: 'fresh' }));
+    const route = createCachedRoute(fetchFn, 60_000, () => 'key', onRefresh);
+    const app = createApp(route);
+
+    await app.request('/api/test');
+    const postRes = await app.request('/api/test/refresh', { method: 'POST' });
+    const postJson = await postRes.json();
+    expect(postJson.data).toEqual({ value: 'fresh' });
+    expect(onRefresh).toHaveBeenCalledTimes(1);
+
+    const getRes = await app.request('/api/test');
+    const getJson = await getRes.json();
+    expect(getJson.data).toEqual({ value: 'fresh' });
+    expect(fetchFn).toHaveBeenCalledTimes(2);
+  });
 });
