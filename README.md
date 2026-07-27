@@ -51,6 +51,7 @@ packages/
 | `pnpm dev` | Start both servers concurrently |
 | `pnpm -F server dev` | Start only the BFF |
 | `pnpm -F frontend dev` | Start only the Vite frontend |
+| `Ctrl+C` | Stop running servers |
 | `pnpm test` | Run all tests |
 | `pnpm -F shared test` | Run shared package tests |
 | `pnpm -F server test` | Run server tests |
