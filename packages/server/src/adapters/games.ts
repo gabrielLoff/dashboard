@@ -7,5 +7,5 @@ export interface GamesFetcher {
 }
 
 export const mockGamesFetcher: GamesFetcher = {
-  fetch: () => getMockGames(),
+  fetch: () => Promise.resolve(getMockGames()),
 };

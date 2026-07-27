@@ -1,6 +1,5 @@
 import type { ApiResult, WeatherData } from '@dashboard/shared';
 import { err, getWeatherCondition } from '@dashboard/shared';
-import { isMockMode, getMockWeather } from '../mock-data.ts';
 
 interface GeocodingResult {
   latitude: number;
@@ -75,10 +74,6 @@ async function fetchForecast(lat: number, lon: number): Promise<ApiResult<OpenMe
 }
 
 export async function fetchWeather(location: string): Promise<ApiResult<WeatherData>> {
-  if (isMockMode()) {
-    return getMockWeather();
-  }
-
   const geoResult = await geocode(location);
   if (!geoResult.ok) return geoResult;
 
@@ -95,10 +90,6 @@ export async function fetchWeather(location: string): Promise<ApiResult<WeatherD
 }
 
 export async function fetchWeatherByCoords(lat: number, lon: number): Promise<ApiResult<WeatherData>> {
-  if (isMockMode()) {
-    return getMockWeather();
-  }
-
   try {
     const forecastResult = await fetchForecast(lat, lon);
     if (!forecastResult.ok) return forecastResult;

@@ -6,5 +6,5 @@ export interface NewsFetcher {
 }
 
 export const mockNewsFetcher: NewsFetcher = {
-  fetch: () => getMockNews(),
+  fetch: () => Promise.resolve(getMockNews()),
 };

@@ -1,6 +1,5 @@
 import type { ApiResult, FreeGamesData } from '@dashboard/shared';
 import { err } from '@dashboard/shared';
-import { isMockMode, getMockGames } from '../mock-data.ts';
 
 const BASE_URL = process.env.FREEGAMES_API_URL ?? 'https://www.gamerpower.com/api';
 
@@ -29,10 +28,6 @@ function buildQueryParams(filters: GamesFilters): string {
 }
 
 export async function fetchGames(filters: GamesFilters = {}): Promise<ApiResult<FreeGamesData>> {
-  if (isMockMode()) {
-    return getMockGames();
-  }
-
   const page = filters.page ?? 1;
   const pageSize = 12;
 

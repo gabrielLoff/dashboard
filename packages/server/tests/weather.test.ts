@@ -6,15 +6,11 @@ const { mockFetchWeather, mockFetchWeatherByCoords } = vi.hoisted(() => ({
   mockFetchWeatherByCoords: vi.fn(),
 }));
 
-vi.mock('../src/connectors/weather.ts', () => ({
-  fetchWeather: mockFetchWeather,
-  fetchWeatherByCoords: mockFetchWeatherByCoords,
-}));
-
-let weatherRoute: typeof import('../src/routes/weather.ts').weatherRoute;
+let createWeatherRoute: typeof import('../src/routes/weather.ts').createWeatherRoute;
 
 function createApp(): Hono {
-  return new Hono().route('/api/weather', weatherRoute);
+  const route = createWeatherRoute(mockFetchWeather, mockFetchWeatherByCoords);
+  return new Hono().route('/api/weather', route);
 }
 
 const mockWeatherData = {
@@ -46,7 +42,7 @@ beforeEach(async () => {
   mockFetchWeatherByCoords.mockReset();
 
   const mod = await import('../src/routes/weather.ts');
-  weatherRoute = mod.weatherRoute;
+  createWeatherRoute = mod.createWeatherRoute;
 });
 
 describe('GET /api/weather', () => {

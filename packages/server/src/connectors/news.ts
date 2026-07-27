@@ -1,15 +1,10 @@
 import type { ApiResult, NewsData } from '@dashboard/shared';
 import { err } from '@dashboard/shared';
-import { isMockMode, getMockNews } from '../mock-data.ts';
 
 const API_KEY = process.env.NEWSLETTER_API_KEY;
 const BASE_URL = process.env.NEWSLETTER_API_URL ?? 'https://newsapi.org/v2';
 
 export async function fetchNews(): Promise<ApiResult<NewsData>> {
-  if (isMockMode() || !API_KEY) {
-    return getMockNews();
-  }
-
   try {
     const res = await fetch(
       `${BASE_URL}/top-headlines?category=general&apiKey=${API_KEY}&pageSize=5`,

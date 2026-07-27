@@ -2,11 +2,17 @@ import 'dotenv/config';
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { serve } from '@hono/node-server';
-import { weatherRoute } from './routes/weather.ts';
-import { newsRoute } from './routes/news.ts';
-import { agendaRoute } from './routes/agenda.ts';
-import { gamesRoute } from './routes/games.ts';
+import { createWeatherRoute } from './routes/weather.ts';
+import { createNewsRoute } from './routes/news.ts';
+import { createAgendaRoute } from './routes/agenda.ts';
+import { createGamesRoute } from './routes/games.ts';
+import { fetchWeather, fetchWeatherByCoords } from './connectors/weather.ts';
+import { fetchNews } from './connectors/news.ts';
+import { fetchAgenda } from './connectors/agenda.ts';
+import { fetchGames, type GamesFilters } from './connectors/games.ts';
+import { getMockWeather, getMockNews, getMockAgenda, getMockGames } from './mock-data.ts';
 import { getAccessToken } from './lib/google-auth.ts';
+import type { ApiResult, WeatherData, NewsData, AgendaData, FreeGamesData } from '@dashboard/shared';
 
 type CalendarStatus = 'connected' | 'missing-refresh-token';
 
@@ -23,6 +29,29 @@ app.get('/api/health', (c) =>
     calendar: calendarStatus,
   }),
 );
+
+const mockMode = process.env.MOCK !== 'false';
+
+const fetchWeather_ = mockMode
+  ? (() => Promise.resolve(getMockWeather())) as (loc: string) => Promise<ApiResult<WeatherData>>
+  : fetchWeather;
+const fetchWeatherByCoords_ = mockMode
+  ? (() => Promise.resolve(getMockWeather())) as (lat: number, lon: number) => Promise<ApiResult<WeatherData>>
+  : fetchWeatherByCoords;
+const fetchNews_ = mockMode
+  ? (() => Promise.resolve(getMockNews())) as () => Promise<ApiResult<NewsData>>
+  : fetchNews;
+const fetchAgenda_ = mockMode
+  ? (() => Promise.resolve(getMockAgenda())) as () => Promise<ApiResult<AgendaData>>
+  : fetchAgenda;
+const fetchGames_ = mockMode
+  ? (() => Promise.resolve(getMockGames())) as (filters: GamesFilters) => Promise<ApiResult<FreeGamesData>>
+  : fetchGames;
+
+const weatherRoute = createWeatherRoute(fetchWeather_, fetchWeatherByCoords_);
+const newsRoute = createNewsRoute(fetchNews_);
+const agendaRoute = createAgendaRoute(fetchAgenda_);
+const gamesRoute = createGamesRoute(fetchGames_);
 
 app.route('/api/weather', weatherRoute);
 app.route('/api/news', newsRoute);

@@ -6,5 +6,5 @@ export interface AgendaFetcher {
 }
 
 export const mockAgendaFetcher: AgendaFetcher = {
-  fetch: () => getMockAgenda(),
+  fetch: () => Promise.resolve(getMockAgenda()),
 };

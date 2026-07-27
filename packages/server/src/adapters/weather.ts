@@ -6,5 +6,5 @@ export interface WeatherFetcher {
 }
 
 export const mockWeatherFetcher: WeatherFetcher = {
-  fetch: () => getMockWeather(),
+  fetch: () => Promise.resolve(getMockWeather()),
 };

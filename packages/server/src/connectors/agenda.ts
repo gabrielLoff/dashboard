@@ -1,6 +1,5 @@
 import type { ApiResult, AgendaData } from '@dashboard/shared';
 import { err } from '@dashboard/shared';
-import { isMockMode, getMockAgenda } from '../mock-data.ts';
 import { getAccessToken } from '../lib/google-auth.ts';
 
 const REFRESH_TOKEN = process.env.GOOGLE_CALENDAR_REFRESH_TOKEN;
@@ -18,8 +17,8 @@ interface GoogleEvent {
 }
 
 export async function fetchAgenda(): Promise<ApiResult<AgendaData>> {
-  if (isMockMode() || !REFRESH_TOKEN) {
-    return getMockAgenda();
+  if (!REFRESH_TOKEN) {
+    return err('Google Calendar not configured: missing refresh token');
   }
 
   try {

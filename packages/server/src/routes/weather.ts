@@ -1,5 +1,4 @@
 import { createCachedRoute } from './cached-route.ts';
-import { fetchWeather, fetchWeatherByCoords } from '../connectors/weather.ts';
 import type { ApiResult, WeatherData } from '@dashboard/shared';
 
 const TTL = Number(process.env.CACHE_TTL_WEATHER) * 1000 || 600_000;
@@ -18,14 +17,25 @@ function cacheKey(
 
 async function fetchFn(
   ctx: { req: { query: (key: string) => string | undefined } },
+  fetchWeather_: (loc: string) => Promise<ApiResult<WeatherData>>,
+  fetchWeatherByCoords_: (lat: number, lon: number) => Promise<ApiResult<WeatherData>>,
 ): Promise<ApiResult<WeatherData>> {
   const lat = ctx.req.query('lat');
   const lon = ctx.req.query('lon');
   if (lat !== undefined && lon !== undefined) {
-    return fetchWeatherByCoords(Number(lat), Number(lon));
+    return fetchWeatherByCoords_(Number(lat), Number(lon));
   }
   const location = ctx.req.query('location') ?? 'Porto Alegre';
-  return fetchWeather(location);
+  return fetchWeather_(location);
 }
 
-export const weatherRoute = createCachedRoute(fetchFn, TTL, cacheKey);
+export function createWeatherRoute(
+  fetchWeather_: (loc: string) => Promise<ApiResult<WeatherData>>,
+  fetchWeatherByCoords_: (lat: number, lon: number) => Promise<ApiResult<WeatherData>>,
+) {
+  return createCachedRoute(
+    (ctx) => fetchFn(ctx, fetchWeather_, fetchWeatherByCoords_),
+    TTL,
+    cacheKey,
+  );
+}
