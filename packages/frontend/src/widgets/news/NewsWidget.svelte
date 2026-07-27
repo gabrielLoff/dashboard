@@ -1,14 +1,15 @@
 <script lang="ts">
   import { Newspaper, ExternalLink } from 'lucide-svelte';
   import WidgetCard from '../../components/WidgetCard.svelte';
-  import { useNewsQuery } from './news-api';
+  import { useSourceQuery } from '$lib/query-config';
   import { isOk, queryKeys, type NewsItem } from '@dashboard/shared';
+  import type { ApiResult, NewsData } from '@dashboard/shared';
   import { queryClient } from '$lib/query-client';
   import { refreshNews } from '$lib/api-client';
   import toast from 'svelte-french-toast';
 
-  const query = useNewsQuery();
-  const data = $derived($query.data);
+  const query = useSourceQuery('news');
+  const data = $derived<ApiResult<NewsData> | undefined>($query.data);
   const error = $derived($query.data && !isOk($query.data) ? $query.data.error : '');
   const items = $derived<NewsItem[]>(data && isOk(data) ? data.data.items : []);
 

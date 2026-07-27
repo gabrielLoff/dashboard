@@ -1,11 +1,12 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { writable, derived } from 'svelte/store';
-  import { createQuery } from '@tanstack/svelte-query';
   import type { CreateQueryOptions } from '@tanstack/svelte-query';
+  import { createQuery } from '@tanstack/svelte-query';
   import { queryKeys, isOk } from '@dashboard/shared';
   import type { ApiResult, WeatherData } from '@dashboard/shared';
-  import { fetchWeather, fetchWeatherByCoords, refreshWeather, refreshWeatherByCoords } from '$lib/api-client';
+  import { refreshWeather, refreshWeatherByCoords } from '$lib/api-client';
+  import { buildWeatherQueryOptions } from '$lib/query-config';
   import { queryClient } from '$lib/query-client';
   import toast from 'svelte-french-toast';
   import { getCurrentPosition, type GeolocationCoords } from '$lib/geolocation';
@@ -23,24 +24,9 @@
   let geoDenied = $state(false);
   let displayLocation = $state<string | null>(null);
 
-  const queryOptions = derived(coords, ($coords): CreateQueryOptions<ApiResult<WeatherData>> => {
-    if ($coords) {
-      return {
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
-        queryKey: queryKeys.weather.byCoords($coords.lat, $coords.lon) as unknown as string[],
-        queryFn: () => fetchWeatherByCoords($coords.lat, $coords.lon),
-        staleTime: 5 * 60 * 1000,
-        refetchInterval: 10 * 60 * 1000,
-      };
-    }
-    return {
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
-      queryKey: queryKeys.weather.current() as unknown as string[],
-      queryFn: () => fetchWeather(DEFAULT_LOCATION),
-      staleTime: 5 * 60 * 1000,
-      refetchInterval: 10 * 60 * 1000,
-    };
-  });
+  const queryOptions = derived(coords, ($coords): CreateQueryOptions<ApiResult<WeatherData>> =>
+    buildWeatherQueryOptions($coords ? { lat: $coords.lat, lon: $coords.lon } : { location: DEFAULT_LOCATION }) as CreateQueryOptions<ApiResult<WeatherData>>,
+  );
 
   const query = createQuery(queryOptions);
 
