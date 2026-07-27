@@ -9,12 +9,14 @@
   import { queryClient } from '$lib/query-client';
   import toast from 'svelte-french-toast';
   import { getCurrentPosition, type GeolocationCoords } from '$lib/geolocation';
-  import { loadLocationCache, saveLocationCache, locationCacheToCoords } from '$lib/location-cache';
+  import { loadLocationCache, saveLocationCache } from '$lib/location-cache';
   import { resolveCityName, resolveCityFromIP } from '$lib/reverse-geocode';
+  import { resolveLocation } from '$lib/weather-location';
   import { CloudSun, Thermometer, Droplets, Wind, MapPin } from 'lucide-svelte';
   import WidgetCard from '../../components/WidgetCard.svelte';
 
   const DEFAULT_LOCATION = 'Porto Alegre';
+  const locationDeps = { getCurrentPosition, resolveCityName, resolveCityFromIP, loadLocationCache, saveLocationCache };
 
   const coords = writable<GeolocationCoords | null>(null);
   let geoPending = $state(false);
@@ -45,46 +47,21 @@
   const data = $derived($query.data);
   const error = $derived(data && !isOk(data) ? data.error : '');
 
-  async function resolveAndSetLocation(lat: number, lon: number) {
-    const location = await resolveCityName(lat, lon);
-    if (location) {
-      displayLocation = location.country ? `${location.city}, ${location.country}` : location.city;
-    } else {
-      displayLocation = `${lat.toFixed(2)}, ${lon.toFixed(2)}`;
-    }
-  }
-
-  onMount(() => {
-    const cached = loadLocationCache();
-    if (cached) {
-      const cachedCoords = locationCacheToCoords(cached);
-      if (cachedCoords) {
-        coords.set(cachedCoords);
-        void resolveAndSetLocation(cachedCoords.lat, cachedCoords.lon);
-      }
-    }
+  onMount(async () => {
+    const result = await resolveLocation(locationDeps, DEFAULT_LOCATION);
+    coords.set(result.coords);
+    displayLocation = result.displayName;
   });
 
   async function useGeolocation() {
     geoDenied = false;
     geoPending = true;
-    const result = await getCurrentPosition();
+    const result = await resolveLocation(locationDeps, DEFAULT_LOCATION);
     geoPending = false;
-    if (result.ok) {
-      coords.set(result.coords);
-      displayLocation = null;
-      void resolveAndSetLocation(result.coords.lat, result.coords.lon);
-      saveLocationCache({ type: 'coords', lat: result.coords.lat, lon: result.coords.lon, timestamp: new Date().toISOString() });
-    } else {
-      const ipLocation = await resolveCityFromIP();
-      if (ipLocation) {
-        const label = ipLocation.country ? `${ipLocation.city}, ${ipLocation.country}` : ipLocation.city;
-        displayLocation = `${label} (approximate)`;
-        geoDenied = false;
-      } else {
-        geoDenied = true;
-      }
-      saveLocationCache({ type: 'city', city: DEFAULT_LOCATION, timestamp: new Date().toISOString() });
+    coords.set(result.coords);
+    displayLocation = result.displayName;
+    if (!result.coords) {
+      geoDenied = true;
     }
   }
 
