@@ -1,58 +1,70 @@
 import type { ApiResult, AgendaData } from '@dashboard/shared';
 import { err } from '@dashboard/shared';
 import { isMockMode, getMockAgenda } from '../mock-data.ts';
+import { getAccessToken } from '../lib/google-auth.ts';
 
-const API_KEY = process.env.CALENDAR_API_KEY;
+const REFRESH_TOKEN = process.env.GOOGLE_CALENDAR_REFRESH_TOKEN;
+
+const CALENDAR_URL = 'https://www.googleapis.com/calendar/v3/calendars/primary/events';
+
+interface GoogleEvent {
+  id: string;
+  summary: string;
+  status: string;
+  visibility?: string;
+  start: { dateTime?: string; date?: string };
+  location?: string;
+  description?: string;
+}
 
 export async function fetchAgenda(): Promise<ApiResult<AgendaData>> {
-  if (isMockMode() || !API_KEY) {
+  if (isMockMode() || !REFRESH_TOKEN) {
     return getMockAgenda();
   }
 
   try {
+    const accessToken = await getAccessToken();
+
     const now = new Date();
-    const sevenDaysLater = new Date(now.getTime() + 7 * 86400000);
+    const threeDaysLater = new Date(now.getTime() + 3 * 86400000);
+
     const params = new URLSearchParams({
-      key: API_KEY,
       timeMin: now.toISOString(),
-      timeMax: sevenDaysLater.toISOString(),
+      timeMax: threeDaysLater.toISOString(),
       singleEvents: 'true',
       orderBy: 'startTime',
+      maxResults: '20',
     });
 
-    const res = await fetch(
-      `https://www.googleapis.com/calendar/v3/calendars/primary/events?${params.toString()}`,
-    );
+    const res = await fetch(`${CALENDAR_URL}?${params.toString()}`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
 
     if (!res.ok) {
       return err(`Google Calendar returned ${res.status}: ${res.statusText}`);
     }
 
-    const json = (await res.json()) as {
-      items: {
-        id: string;
-        summary: string;
-        start: { dateTime?: string; date?: string };
-        location?: string;
-        description?: string;
-      }[];
-    };
+    const json = (await res.json()) as { items: GoogleEvent[] };
 
     return {
       ok: true,
       data: {
-        events: json.items.map((e, i) => ({
-          id: e.id || String(i),
-          title: e.summary || 'Untitled',
-          date: e.start.dateTime
-            ? e.start.dateTime.split('T')[0]
-            : e.start.date ?? '',
-          time: e.start.dateTime
-            ? e.start.dateTime.split('T')[1]?.slice(0, 5) ?? ''
-            : '',
-          location: e.location ?? '',
-          description: e.description ?? '',
-        })),
+        events: json.items.map((e, i) => {
+          const isPrivate = e.visibility === 'private' || e.visibility === 'confidential';
+          return {
+            id: e.id || String(i),
+            title: isPrivate ? 'Busy' : (e.summary || 'Untitled'),
+            date: e.start.dateTime
+              ? e.start.dateTime.split('T')[0]
+              : e.start.date ?? '',
+            time: e.start.dateTime
+              ? e.start.dateTime.split('T')[1]?.slice(0, 5) ?? ''
+              : '',
+            location: isPrivate ? '' : (e.location ?? ''),
+            description: isPrivate ? '' : (e.description ?? ''),
+            status: e.status as 'confirmed' | 'tentative' | 'cancelled',
+          };
+        }),
         updatedAt: new Date().toISOString(),
       },
     };

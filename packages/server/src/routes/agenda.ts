@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { fetchAgenda } from '../connectors/agenda.ts';
 import { TTLCache } from '../cache.ts';
+import { resetTokenCache } from '../lib/google-auth.ts';
 import type { AgendaData } from '@dashboard/shared';
 
 const TTL = Number(process.env.CACHE_TTL_AGENDA) * 1000 || 600_000;
@@ -19,6 +20,7 @@ export const agendaRoute = new Hono()
   })
   .post('/refresh', async (c) => {
     cache.delete('agenda');
+    resetTokenCache();
     const result = await fetchAgenda();
     if (result.ok) {
       cache.set('agenda', result.data);
