@@ -48,10 +48,26 @@ export function refreshAgenda(): Promise<ApiResult<AgendaData>> {
   return post<AgendaData>('/agenda/refresh');
 }
 
-export function fetchGames(): Promise<ApiResult<FreeGamesData>> {
-  return get<FreeGamesData>('/games');
+export interface GamesFilters {
+  type?: string;
+  platform?: string;
+  page?: number;
 }
 
-export function refreshGames(): Promise<ApiResult<FreeGamesData>> {
-  return post<FreeGamesData>('/games/refresh');
+function gamesQueryParams(filters?: GamesFilters): string {
+  if (!filters) return '';
+  const params = new URLSearchParams();
+  if (filters.type) params.set('type', filters.type);
+  if (filters.platform) params.set('platform', filters.platform);
+  if (filters.page) params.set('page', String(filters.page));
+  const str = params.toString();
+  return str ? `?${str}` : '';
+}
+
+export function fetchGames(filters?: GamesFilters): Promise<ApiResult<FreeGamesData>> {
+  return get<FreeGamesData>(`/games${gamesQueryParams(filters)}`);
+}
+
+export function refreshGames(filters?: GamesFilters): Promise<ApiResult<FreeGamesData>> {
+  return post<FreeGamesData>(`/games/refresh${gamesQueryParams(filters)}`);
 }

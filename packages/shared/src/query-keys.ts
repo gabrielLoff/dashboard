@@ -19,6 +19,7 @@ export const queryKeys = {
 
   games: {
     all: ['dashboard', 'games'] as const,
-    list: () => [...queryKeys.games.all] as const,
+    list: (filters?: { type?: string; platform?: string; page?: number }) =>
+      [...queryKeys.games.all, filters?.type ?? 'all', filters?.platform ?? 'pc', filters?.page ?? 1] as const,
   },
 } as const;

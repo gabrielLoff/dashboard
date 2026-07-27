@@ -1,23 +1,80 @@
 <script lang="ts">
-  import { Gamepad2, Clock, ExternalLink } from 'lucide-svelte';
+  import { Gamepad2, Clock, ExternalLink, Loader2 } from 'lucide-svelte';
   import WidgetCard from '../../components/WidgetCard.svelte';
   import { useGamesQuery } from './games-api';
   import { isOk, queryKeys, type FreeGame } from '@dashboard/shared';
-  import { refreshGames } from '$lib/api-client';
+  import { refreshGames, fetchGames, type GamesFilters } from '$lib/api-client';
   import { queryClient } from '$lib/query-client';
   import toast from 'svelte-french-toast';
 
-  const query = useGamesQuery();
+  let typeFilter = $state<string>('all');
+  let platformFilter = $state<string>('pc');
+  let currentPage = $state<number>(1);
+  let allGames = $state<FreeGame[]>([]);
+  let isLoadingMore = $state<boolean>(false);
+  let hasMore = $state<boolean>(true);
+
+  const filters = $derived<GamesFilters>({ type: typeFilter, platform: platformFilter });
+  const query = $derived(useGamesQuery({ ...filters, page: 1 }));
   const data = $derived($query.data);
   const error = $derived($query.data && !isOk($query.data) ? $query.data.error : '');
-  const games = $derived<FreeGame[]>(data && isOk(data) ? data.data.games : []);
+  const totalResults = $derived(data && isOk(data) ? data.data.totalResults : 0);
+  const pageSize = $derived(data && isOk(data) ? data.data.pageSize : 12);
+
+  $effect(() => {
+    if (data && isOk(data)) {
+      allGames = data.data.games;
+      currentPage = 1;
+      hasMore = allGames.length < totalResults;
+    }
+  });
+
+  const typeOptions = [
+    { value: 'all', label: 'All Types' },
+    { value: 'game', label: 'Game' },
+    { value: 'loot', label: 'Loot' },
+    { value: 'beta', label: 'Beta' },
+  ];
+
+  const platformOptions = [
+    { value: 'pc', label: 'PC' },
+    { value: 'steam', label: 'Steam' },
+    { value: 'epic-games-store', label: 'Epic' },
+    { value: 'gog', label: 'GOG' },
+    { value: 'drm-free', label: 'DRM-Free' },
+    { value: 'itchio', label: 'itch.io' },
+  ];
+
+  async function loadMore() {
+    if (isLoadingMore || !hasMore) return;
+    isLoadingMore = true;
+    try {
+      const nextPage = currentPage + 1;
+      const result = await fetchGames({ ...filters, page: nextPage });
+      if (isOk(result)) {
+        allGames = [...allGames, ...result.data.games];
+        currentPage = nextPage;
+        hasMore = allGames.length < totalResults;
+      }
+    } finally {
+      isLoadingMore = false;
+    }
+  }
+
+  function handleScroll(e: Event) {
+    const target = e.target as HTMLElement;
+    const { scrollTop, scrollHeight, clientHeight } = target;
+    if (scrollHeight - scrollTop - clientHeight < 100) {
+      loadMore();
+    }
+  }
 
   async function handleRefresh(opts?: { clear?: boolean }) {
     if (opts?.clear) {
-      const result = await refreshGames();
+      const result = await refreshGames(filters);
       if (isOk(result)) {
-        queryClient.setQueryData(queryKeys.games.list(), result);
-        await queryClient.invalidateQueries({ queryKey: queryKeys.games.list() });
+        queryClient.setQueryData(queryKeys.games.list(filters), result);
+        await queryClient.invalidateQueries({ queryKey: queryKeys.games.list(filters) });
         toast.success('Cache cleared');
       }
       return;
@@ -48,27 +105,63 @@
     <Gamepad2 class="h-4 w-4" />
   {/snippet}
   {#snippet children()}
-    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-      {#each games as game (game.id)}
-        <a
-          href={game.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          class="group overflow-hidden rounded-lg border border-neutral-100 transition-colors hover:border-primary-200 dark:border-neutral-800 dark:hover:border-primary-800"
-        >
-          <img src={game.imageUrl} alt={game.title} class="h-24 w-full object-cover" />
-          <div class="p-3">
-            <div class="flex items-start justify-between gap-1">
-              <p class="text-sm font-medium group-hover:text-primary-600">{game.title}</p>
-              <ExternalLink class="mt-0.5 h-3 w-3 shrink-0 text-neutral-300" />
+    <div class="mb-3 flex gap-2">
+      <select
+        bind:value={typeFilter}
+        class="rounded-md border border-neutral-200 bg-white px-2 py-1 text-xs dark:border-neutral-700 dark:bg-neutral-800"
+      >
+        {#each typeOptions as opt}
+          <option value={opt.value}>{opt.label}</option>
+        {/each}
+      </select>
+      <select
+        bind:value={platformFilter}
+        class="rounded-md border border-neutral-200 bg-white px-2 py-1 text-xs dark:border-neutral-700 dark:bg-neutral-800"
+      >
+        {#each platformOptions as opt}
+          <option value={opt.value}>{opt.label}</option>
+        {/each}
+      </select>
+    </div>
+    <div class="max-h-96 overflow-y-auto" onscroll={handleScroll}>
+      <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        {#each allGames as game (game.id)}
+          <a
+            href={game.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="group overflow-hidden rounded-lg border border-neutral-100 transition-colors hover:border-primary-200 dark:border-neutral-800 dark:hover:border-primary-800"
+          >
+            <img src={game.imageUrl} alt={game.title} class="h-24 w-full object-cover" />
+            <div class="p-3">
+              <div class="flex items-start justify-between gap-1">
+                <p class="text-sm font-medium group-hover:text-primary-600">{game.title}</p>
+                <ExternalLink class="mt-0.5 h-3 w-3 shrink-0 text-neutral-300" />
+              </div>
+              <div class="mt-2 flex items-center justify-between text-xs text-neutral-500 dark:text-neutral-400">
+                <span>{game.platform} - {game.source}</span>
+                <span class="flex items-center gap-1"><Clock class="h-3 w-3" /> {daysUntil(game.expiryDate)}</span>
+              </div>
             </div>
-            <div class="mt-2 flex items-center justify-between text-xs text-neutral-500 dark:text-neutral-400">
-              <span>{game.platform} - {game.source}</span>
-              <span class="flex items-center gap-1"><Clock class="h-3 w-3" /> {daysUntil(game.expiryDate)}</span>
-            </div>
-          </div>
-        </a>
-      {/each}
+          </a>
+        {/each}
+      </div>
+      {#if hasMore}
+        <div class="mt-3 flex justify-center">
+          <button
+            onclick={loadMore}
+            disabled={isLoadingMore}
+            class="flex items-center gap-2 rounded-md border border-neutral-200 px-3 py-1.5 text-xs text-neutral-600 transition-colors hover:bg-neutral-50 disabled:opacity-50 dark:border-neutral-700 dark:text-neutral-400 dark:hover:bg-neutral-800"
+          >
+            {#if isLoadingMore}
+              <Loader2 class="h-3 w-3 animate-spin" />
+              Loading...
+            {:else}
+              Load more
+            {/if}
+          </button>
+        </div>
+      {/if}
     </div>
     <p class="mt-3 text-center text-xs text-neutral-400">
       Powered by

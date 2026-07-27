@@ -50,6 +50,9 @@ export interface FreeGame {
 
 export interface FreeGamesData {
   games: FreeGame[];
+  totalResults: number;
+  page: number;
+  pageSize: number;
   updatedAt: string;
 }
 
