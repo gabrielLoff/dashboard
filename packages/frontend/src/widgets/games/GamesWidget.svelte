@@ -25,7 +25,7 @@
     if (data && isOk(data)) {
       allGames = data.data.games;
       currentPage = 1;
-      hasMore = allGames.length < totalResults;
+      hasMore = data.data.games.length < totalResults;
     }
   });
 
