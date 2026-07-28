@@ -7,6 +7,7 @@
   import { queryClient } from '$lib/query-client';
   import { refreshAgenda } from '$lib/api-client';
   import toast from 'svelte-french-toast';
+  import { formatRelativeDate } from '$lib/utils';
 
   const query = useSourceQuery('agenda');
   const data = $derived<ApiResult<AgendaData> | undefined>($query.data);
@@ -24,11 +25,6 @@
     } else {
       await $query.refetch();
     }
-  }
-
-  function formatDate(dateStr: string): string {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
   }
 </script>
 
@@ -60,7 +56,7 @@
           <div class="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-neutral-500 dark:text-neutral-400"
                class:opacity-70={cancelled}
           >
-            <span class="flex items-center gap-1"><Calendar class="h-3 w-3" /> {formatDate(event.date)}</span>
+            <span class="flex items-center gap-1"><Calendar class="h-3 w-3" /> {formatRelativeDate(event.date)}</span>
             {#if event.time}
               <span class="flex items-center gap-1"><Clock class="h-3 w-3" /> {event.time}</span>
             {/if}
