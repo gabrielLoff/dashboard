@@ -12,6 +12,7 @@
     error,
     onRefresh,
     children,
+    background,
     updatedAt,
     size = 'compact',
     onToggleSize,
@@ -25,6 +26,7 @@
     error: string;
     onRefresh: (opts?: { clear?: boolean }) => void;
     children: Snippet;
+    background?: Snippet;
     updatedAt?: string;
     size?: WidgetSize;
     onToggleSize?: () => void;
@@ -79,6 +81,11 @@
   </div>
 
   <div class="relative p-5">
+    {#if background}
+      <div class="absolute inset-0 overflow-hidden pointer-events-none">
+        {@render background()}
+      </div>
+    {/if}
     {#if isLoading}
       <div class="flex items-center justify-center py-8">
         <RefreshCw class="h-6 w-6 animate-spin text-neutral-400" />
