@@ -24,13 +24,17 @@ pnpm approve-builds   # Required if esbuild postinstall scripts are blocked afte
 | Fix | `fix/<#>-<slug>` | `fix(#1): prevent refresh TypeError` |
 | Chore | `chore/<#>-<slug>` | `chore(#3): bump deps` |
 
+**Squash merge commit messages must include `Closes #N`** so GitHub auto-closes the issue on push.
+
 ```bash
 git checkout main && git pull
 git checkout -b feat/5-coordinate-weather
 # ... work ...
 git checkout main && git pull
 git merge --squash feat/5-coordinate-weather
-git commit -m "feat(#5): add coordinate-based weather endpoint"
+git commit -m "feat(#5): add coordinate-based weather endpoint
+
+Closes #5"
 git push
 git branch -d feat/5-coordinate-weather && git push origin --delete feat/5-coordinate-weather
 ```

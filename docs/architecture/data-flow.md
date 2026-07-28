@@ -2,18 +2,18 @@
 
 ## Request lifecycle
 
-Every widget follows the same data flow. The architecture guarantees that one failing API never blocks the rest of the dashboard.
+All server-backed widgets follow the same data flow. The architecture guarantees that one failing API never blocks the rest of the dashboard.
 
 ```mermaid
 flowchart TD
     subgraph Widget["Widget (Svelte 5 component)"]
         Mount["onMount / reactive setup"]
-        Query["useWeatherQuery()"]
+        Query["useSourceQuery('weather')"]
         Derive["$derived(query.data)"]
     end
 
     subgraph TQ["TanStack Query"]
-        CacheCheck{"Cached &lt; staleTime?"}
+        CacheCheck{"Cached < staleTime?"}
         Return["return cached data"]
         BGRefetch["refetch in background"]
     end
@@ -34,7 +34,7 @@ flowchart TD
     Mount --> Query --> CacheCheck
     CacheCheck -->|yes| Return
     CacheCheck -->|no| Route
-    
+
     Return --> BGRefetch --> Route
     Return --> Derive
 
@@ -47,9 +47,51 @@ flowchart TD
     MockCheck -->|no| Real --> Derive
 ```
 
+## Weather location resolution
+
+The weather widget has a unique location resolution chain that runs before the query:
+
+```mermaid
+flowchart TD
+    Mount["onMount"] --> Cache{"localStorage cache<br/>has coords?"}
+    Cache -->|yes| Geo["Reverse geocode cached coords"]
+    Cache -->|no| Browser["Browser Geolocation API"]
+
+    Browser -->|granted| Geo
+    Browser -->|denied| IP["IP-based geolocation<br/>(BigDataCloud)"]
+    Browser -->|unavailable| IP
+
+    Geo -->|success| Query["Query weather by coords"]
+    Geo -->|failure| IP
+    IP -->|city found| QueryCity["Query weather by city name"]
+    IP -->|failure| Default["Default: Porto Alegre"]
+
+    Query --> Render["Render widget"]
+    QueryCity --> Render
+    Default --> Render
+```
+
+Location is cached in localStorage for 7 days. The "Use my location" button re-triggers the full chain.
+
+## Habits — client-side only
+
+Habits skip the entire server layer. State lives in localStorage, managed by a reducer:
+
+```mermaid
+flowchart LR
+    UI["HabitWidget.svelte"] --> Dispatch["habitStore.dispatch(action)"]
+    Dispatch --> Reducer["habitReducer()"]
+    Reducer --> State["new HabitState"]
+    State --> Persist["localStorage"]
+    State --> Derived["derived stores<br/>habits, habitCount, updatedAt"]
+    Derived --> UI
+```
+
+No TanStack Query, no BFF, no network requests. The widget always renders instantly.
+
 ## Error propagation
 
-All layers use `ApiResult<T>` from `@dashboard/shared`. Errors propagate as values, not exceptions.
+All server layers use `ApiResult<T>` from `@dashboard/shared`. Errors propagate as values, not exceptions.
 
 ```mermaid
 flowchart LR
@@ -76,7 +118,7 @@ flowchart LR
 ### ApiResult type
 
 ```ts
-type ApiResult<T> = 
+type ApiResult<T> =
   | { ok: true; data: T }
   | { ok: false; error: string };
 ```
@@ -97,7 +139,7 @@ The consumer pattern in every widget:
 
 ## Parallel loading
 
-All four queries fire simultaneously on page load. TanStack Query handles request deduplication, so even if two widgets query weather, only one request reaches the BFF.
+All five queries fire simultaneously on page load (habits resolves instantly from localStorage). TanStack Query handles request deduplication, so even if two widgets query the same source, only one request reaches the BFF.
 
 ```mermaid
 gantt
@@ -124,13 +166,21 @@ gantt
     Skeleton render       :d1, 0, 1
     Query fetch           :d2, 1, 3
     Data render           :d3, 3, 4
+
+    section Habits widget
+    Instant render        :e1, 0, 1
 ```
 
 ## Refresh triggers
 
 | Trigger | Mechanism | Behavior |
 |---|---|---|
-| Page load | Initial render | Fires all 4 queries in parallel |
+| Page load | Initial render | Fires all 4 server queries in parallel; habits loads from localStorage |
 | Window focus | `refetchOnWindowFocus: true` | Refetches only stale queries |
 | Timer | `refetchInterval` per source | Polls time-sensitive sources (weather, agenda) |
-| Manual | Refresh button per widget | Bypasses TanStack cache, forces BFF refresh |
+| Manual | Refresh button per widget | Bypasses TanStack cache, hits BFF `/refresh` endpoint |
+| Alt+click | Alt + refresh button | Clears BFF cache for that source, forces fresh fetch |
+
+## Query configuration
+
+All source query options (staleTime, refetchInterval, queryKey, queryFn) are centralized in `query-config.ts`. The `useSourceQuery(name)` function creates a TanStack Query with the right config. Weather has a separate `buildWeatherQueryOptions()` because it supports both city-name and coordinate-based queries.

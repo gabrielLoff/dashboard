@@ -9,12 +9,14 @@
     "test": "pnpm -r test",
     "lint": "pnpm -r lint",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "proto:habits": "npx tsx prototypes/habit-tracker/habit-tui.ts"
   },
   "devDependencies": {
     "concurrently": "^9.2.1",
     "prettier": "^3.5.3",
     "prettier-plugin-svelte": "^3.3.3",
+    "tsx": "^4.23.1",
     "typescript": "^5.8.3"
   }
 }
