@@ -16,6 +16,15 @@
   import { CloudSun, Thermometer, Droplets, Wind, MapPin } from 'lucide-svelte';
   import WidgetCard from '../../components/WidgetCard.svelte';
   import type { WidgetSize } from '$lib/layout-store';
+  import SunAnimation from './animations/SunAnimation.svelte';
+  import CloudSunAnimation from './animations/CloudSunAnimation.svelte';
+  import CloudAnimation from './animations/CloudAnimation.svelte';
+  import FogAnimation from './animations/FogAnimation.svelte';
+  import DrizzleAnimation from './animations/DrizzleAnimation.svelte';
+  import RainAnimation from './animations/RainAnimation.svelte';
+  import CloudRainAnimation from './animations/CloudRainAnimation.svelte';
+  import SnowAnimation from './animations/SnowAnimation.svelte';
+  import BoltAnimation from './animations/BoltAnimation.svelte';
 
   let {
     size = 'compact',
@@ -39,7 +48,20 @@
 
   const query = createQuery(queryOptions);
 
-  const data = $derived($query.data);
+  const ANIMATION_MAP: Record<string, any> = {
+    sun: SunAnimation,
+    'cloud-sun': CloudSunAnimation,
+    cloud: CloudAnimation,
+    fog: FogAnimation,
+    drizzle: DrizzleAnimation,
+    rain: RainAnimation,
+    'cloud-rain': CloudRainAnimation,
+    snow: SnowAnimation,
+    bolt: BoltAnimation,
+  };
+
+  const weatherIcon = $derived(data && isOk(data) ? data.data.icon : '');
+  const AnimationComponent = $derived(ANIMATION_MAP[weatherIcon] ?? null);
   const error = $derived(data && !isOk(data) ? data.error : '');
   const updatedAt = $derived(data && isOk(data) ? data.data.updatedAt : undefined);
 
@@ -102,6 +124,11 @@
   {size}
   {onToggleSize}
 >
+  {#snippet background()}
+    {#if AnimationComponent}
+      <AnimationComponent />
+    {/if}
+  {/snippet}
   {#snippet icon()}
     <CloudSun class="h-4 w-4" />
   {/snippet}
