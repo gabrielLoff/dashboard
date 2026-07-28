@@ -16,6 +16,7 @@ export interface NewsItem {
   url: string;
   publishedAt: string;
   summary: string;
+  imageUrl?: string;
 }
 
 export interface NewsData {
