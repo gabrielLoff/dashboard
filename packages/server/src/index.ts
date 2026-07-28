@@ -7,7 +7,7 @@ import { createNewsRoute } from './routes/news.ts';
 import { createAgendaRoute } from './routes/agenda.ts';
 import { createGamesRoute } from './routes/games.ts';
 import { fetchWeather, fetchWeatherByCoords } from './connectors/weather.ts';
-import { fetchNews } from './connectors/news.ts';
+import { fetchNews, type NewsFilters } from './connectors/news.ts';
 import { fetchAgenda } from './connectors/agenda.ts';
 import { fetchGames, type GamesFilters } from './connectors/games.ts';
 import { getMockWeather, getMockNews, getMockAgenda, getMockGames } from './mock-data.ts';
@@ -39,7 +39,7 @@ const fetchWeatherByCoords_ = mockMode
   ? (() => Promise.resolve(getMockWeather())) as (lat: number, lon: number) => Promise<ApiResult<WeatherData>>
   : fetchWeatherByCoords;
 const fetchNews_ = mockMode
-  ? (() => Promise.resolve(getMockNews())) as () => Promise<ApiResult<NewsData>>
+  ? (() => Promise.resolve(getMockNews())) as (filters?: NewsFilters) => Promise<ApiResult<NewsData>>
   : fetchNews;
 const fetchAgenda_ = mockMode
   ? (() => Promise.resolve(getMockAgenda())) as () => Promise<ApiResult<AgendaData>>

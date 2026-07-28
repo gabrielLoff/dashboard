@@ -3,6 +3,7 @@ export type {
   WeatherData,
   NewsData,
   NewsItem,
+  NewsFilters,
   AgendaData,
   AgendaEvent,
   FreeGamesData,

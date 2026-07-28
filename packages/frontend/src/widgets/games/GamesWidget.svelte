@@ -1,8 +1,9 @@
 <script lang="ts">
   import { Gamepad2, Clock, ExternalLink, Loader2 } from 'lucide-svelte';
   import WidgetCard from '../../components/WidgetCard.svelte';
-  import { useGamesQuery } from './games-api';
+  import { useSourceQuery } from '$lib/query-config';
   import { isOk, queryKeys, type FreeGame } from '@dashboard/shared';
+  import type { ApiResult, FreeGamesData } from '@dashboard/shared';
   import { refreshGames, fetchGames, type GamesFilters } from '$lib/api-client';
   import { queryClient } from '$lib/query-client';
   import toast from 'svelte-french-toast';
@@ -15,8 +16,8 @@
   let hasMore = $state<boolean>(true);
 
   const filters = $derived<GamesFilters>({ type: typeFilter, platform: platformFilter });
-  const query = $derived(useGamesQuery({ ...filters, page: 1 }));
-  const data = $derived($query.data);
+  const query = $derived(useSourceQuery('games', { ...filters, page: 1 }));
+  const data = $derived<ApiResult<FreeGamesData> | undefined>($query.data);
   const error = $derived($query.data && !isOk($query.data) ? $query.data.error : '');
   const totalResults = $derived(data && isOk(data) ? data.data.totalResults : 0);
   const pageSize = $derived(data && isOk(data) ? data.data.pageSize : 12);

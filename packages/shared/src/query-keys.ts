@@ -9,7 +9,8 @@ export const queryKeys = {
 
   news: {
     all: ['dashboard', 'news'] as const,
-    list: () => [...queryKeys.news.all] as const,
+    list: (filters?: { country?: string; category?: string }) =>
+      [...queryKeys.news.all, filters?.country ?? 'all', filters?.category ?? 'general'] as const,
   },
 
   agenda: {

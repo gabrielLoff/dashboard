@@ -1,14 +1,15 @@
 <script lang="ts">
   import { Calendar, Clock, MapPin } from 'lucide-svelte';
   import WidgetCard from '../../components/WidgetCard.svelte';
-  import { useAgendaQuery } from './agenda-api';
+  import { useSourceQuery } from '$lib/query-config';
   import { isOk, type AgendaEvent, queryKeys } from '@dashboard/shared';
+  import type { ApiResult, AgendaData } from '@dashboard/shared';
   import { queryClient } from '$lib/query-client';
   import { refreshAgenda } from '$lib/api-client';
   import toast from 'svelte-french-toast';
 
-  const query = useAgendaQuery();
-  const data = $derived($query.data);
+  const query = useSourceQuery('agenda');
+  const data = $derived<ApiResult<AgendaData> | undefined>($query.data);
   const error = $derived($query.data && !isOk($query.data) ? $query.data.error : '');
   const events = $derived<AgendaEvent[]>(data && isOk(data) ? data.data.events : []);
 

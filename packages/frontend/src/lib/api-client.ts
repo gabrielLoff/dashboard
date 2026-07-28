@@ -1,4 +1,6 @@
-import type { ApiResult, WeatherData, NewsData, AgendaData, FreeGamesData } from '@dashboard/shared';
+import type { ApiResult, WeatherData, NewsData, NewsFilters, AgendaData, FreeGamesData } from '@dashboard/shared';
+
+export type { NewsFilters };
 
 const BASE = '/api';
 
@@ -32,12 +34,21 @@ export function refreshWeatherByCoords(lat: number, lon: number): Promise<ApiRes
   return post<WeatherData>(`/weather/refresh?lat=${lat}&lon=${lon}`);
 }
 
-export function fetchNews(): Promise<ApiResult<NewsData>> {
-  return get<NewsData>('/news');
+export function newsQueryParams(filters?: NewsFilters): string {
+  if (!filters) return '';
+  const params = new URLSearchParams();
+  if (filters.country) params.set('country', filters.country);
+  if (filters.category) params.set('category', filters.category);
+  const str = params.toString();
+  return str ? `?${str}` : '';
 }
 
-export function refreshNews(): Promise<ApiResult<NewsData>> {
-  return post<NewsData>('/news/refresh');
+export function fetchNews(filters?: NewsFilters): Promise<ApiResult<NewsData>> {
+  return get<NewsData>(`/news${newsQueryParams(filters)}`);
+}
+
+export function refreshNews(filters?: NewsFilters): Promise<ApiResult<NewsData>> {
+  return post<NewsData>(`/news/refresh${newsQueryParams(filters)}`);
 }
 
 export function fetchAgenda(): Promise<ApiResult<AgendaData>> {

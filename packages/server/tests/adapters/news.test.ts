@@ -43,4 +43,9 @@ describe('mockNewsFetcher', () => {
       expect(result.data.items[0].title).toBe('Test Headline');
     }
   });
+
+  it('accepts filters argument', async () => {
+    const result = await mockNewsFetcher.fetch({ country: 'us', category: 'technology' });
+    expect(result.ok).toBe(true);
+  });
 });

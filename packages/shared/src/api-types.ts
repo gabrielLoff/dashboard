@@ -56,6 +56,11 @@ export interface FreeGamesData {
   updatedAt: string;
 }
 
+export interface NewsFilters {
+  country?: string;
+  category?: string;
+}
+
 export interface DashboardData {
   weather: WeatherData;
   news: NewsData;

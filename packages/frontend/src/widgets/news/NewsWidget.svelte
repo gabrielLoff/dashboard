@@ -1,23 +1,46 @@
 <script lang="ts">
   import { Newspaper, ExternalLink } from 'lucide-svelte';
   import WidgetCard from '../../components/WidgetCard.svelte';
-  import { useNewsQuery } from './news-api';
+  import { useSourceQuery } from '$lib/query-config';
   import { isOk, queryKeys, type NewsItem } from '@dashboard/shared';
+  import type { ApiResult, NewsData, NewsFilters } from '@dashboard/shared';
   import { queryClient } from '$lib/query-client';
   import { refreshNews } from '$lib/api-client';
   import toast from 'svelte-french-toast';
 
-  const query = useNewsQuery();
-  const data = $derived($query.data);
+  let countryFilter = $state<string>('');
+  let categoryFilter = $state<string>('general');
+
+  const filters = $derived<NewsFilters>({
+    country: countryFilter || undefined,
+    category: categoryFilter || undefined,
+  });
+  const query = $derived(useSourceQuery('news', filters));
+  const data = $derived<ApiResult<NewsData> | undefined>($query.data);
   const error = $derived($query.data && !isOk($query.data) ? $query.data.error : '');
   const items = $derived<NewsItem[]>(data && isOk(data) ? data.data.items : []);
 
+  const countryOptions = [
+    { value: '', label: 'All Countries' },
+    { value: 'us', label: 'US' },
+  ];
+
+  const categoryOptions = [
+    { value: 'general', label: 'General' },
+    { value: 'business', label: 'Business' },
+    { value: 'entertainment', label: 'Entertainment' },
+    { value: 'health', label: 'Health' },
+    { value: 'science', label: 'Science' },
+    { value: 'sports', label: 'Sports' },
+    { value: 'technology', label: 'Technology' },
+  ];
+
   async function handleRefresh(opts?: { clear?: boolean }) {
     if (opts?.clear) {
-      const result = await refreshNews();
+      const result = await refreshNews(filters);
       if (isOk(result)) {
-        queryClient.setQueryData(queryKeys.news.list(), result);
-        await queryClient.invalidateQueries({ queryKey: queryKeys.news.list() });
+        queryClient.setQueryData(queryKeys.news.list(filters), result);
+        await queryClient.invalidateQueries({ queryKey: queryKeys.news.list(filters) });
         toast.success('Cache cleared');
       }
     } else {
@@ -37,6 +60,24 @@
     <Newspaper class="h-4 w-4" />
   {/snippet}
   {#snippet children()}
+    <div class="mb-3 flex gap-2">
+      <select
+        bind:value={countryFilter}
+        class="rounded-md border border-neutral-200 bg-white px-2 py-1 text-xs dark:border-neutral-700 dark:bg-neutral-800"
+      >
+        {#each countryOptions as opt (opt.value)}
+          <option value={opt.value}>{opt.label}</option>
+        {/each}
+      </select>
+      <select
+        bind:value={categoryFilter}
+        class="rounded-md border border-neutral-200 bg-white px-2 py-1 text-xs dark:border-neutral-700 dark:bg-neutral-800"
+      >
+        {#each categoryOptions as opt (opt.value)}
+          <option value={opt.value}>{opt.label}</option>
+        {/each}
+      </select>
+    </div>
     <div class="flex flex-col gap-3">
       {#each items as item (item.id)}
         <a

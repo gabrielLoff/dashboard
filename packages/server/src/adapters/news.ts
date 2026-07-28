@@ -1,8 +1,8 @@
-import type { ApiResult, NewsData } from '@dashboard/shared';
+import type { ApiResult, NewsData, NewsFilters } from '@dashboard/shared';
 import { getMockNews } from '../mock-data.ts';
 
 export interface NewsFetcher {
-  fetch(): Promise<ApiResult<NewsData>>;
+  fetch(filters?: NewsFilters): Promise<ApiResult<NewsData>>;
 }
 
 export const mockNewsFetcher: NewsFetcher = {
