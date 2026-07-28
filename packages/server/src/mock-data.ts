@@ -4,6 +4,8 @@ import type {
   NewsData,
   AgendaData,
   FreeGamesData,
+  ShowSearchResult,
+  ShowsData,
 } from '@dashboard/shared';
 
 const MOCK = process.env.MOCK !== 'false';
@@ -178,4 +180,81 @@ export function getMockGames(): ApiResult<FreeGamesData> {
 
 export function isMockMode(): boolean {
   return MOCK;
+}
+
+const mockShowSearch: ShowSearchResult[] = [
+  {
+    id: 169,
+    name: 'Breaking Bad',
+    status: 'Ended',
+    premiered: '2008-01-20',
+    ended: '2013-09-29',
+    image: { medium: 'https://static.tvmaze.com/uploads/images/medium_portrait/0/240.jpg', original: 'https://static.tvmaze.com/uploads/images/original_untouched/0/240.jpg' },
+    network: { name: 'AMC' },
+    summary: 'A high school chemistry teacher turned meth producer.',
+  },
+  {
+    id: 46562,
+    name: 'The Last of Us',
+    status: 'Running',
+    premiered: '2023-01-15',
+    image: { medium: 'https://static.tvmaze.com/uploads/images/medium_portrait/465/1163815.jpg', original: 'https://static.tvmaze.com/uploads/images/original_untouched/465/1163815.jpg' },
+    network: { name: 'HBO' },
+    summary: 'Joel and Ellie navigate a post-apocalyptic America.',
+  },
+  {
+    id: 690,
+    name: 'Stranger Things',
+    status: 'Running',
+    premiered: '2016-07-15',
+    image: { medium: 'https://static.tvmaze.com/uploads/images/medium_portrait/690/1740795.jpg', original: 'https://static.tvmaze.com/uploads/images/original_untouched/690/1740795.jpg' },
+    network: null,
+    webChannel: { name: 'Netflix' },
+    summary: 'Kids in small town face supernatural forces.',
+  },
+  {
+    id: 175,
+    name: 'The Office',
+    status: 'Ended',
+    premiered: '2005-03-24',
+    ended: '2013-05-16',
+    image: { medium: 'https://static.tvmaze.com/uploads/images/medium_portrait/175/435447.jpg', original: 'https://static.tvmaze.com/uploads/images/original_untouched/175/435447.jpg' },
+    network: { name: 'NBC' },
+    summary: 'Mockumentary about office workers at Dunder Mifflin.',
+  },
+];
+
+const futureDate1 = new Date(Date.now() + 14 * 86400000).toISOString().split('T')[0];
+const futureDate2 = new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0];
+
+const mockShowsUpcoming: ShowsData = {
+  upcoming: [
+    {
+      showId: 46562,
+      showName: 'The Last of Us',
+      season: 3,
+      number: 1,
+      title: 'TBA',
+      airdate: futureDate1,
+      airtime: '21:00',
+      runtime: 60,
+      image: 'https://static.tvmaze.com/uploads/images/medium_portrait/465/1163815.jpg',
+    },
+    {
+      showId: 690,
+      showName: 'Stranger Things',
+      season: 5,
+      premiereDate: futureDate2,
+      image: 'https://static.tvmaze.com/uploads/images/medium_portrait/690/1740795.jpg',
+    },
+  ],
+  updatedAt: new Date().toISOString(),
+};
+
+export function getMockShows(): ApiResult<ShowSearchResult[]> {
+  return ok(mockShowSearch);
+}
+
+export function getMockShowsUpcoming(): ApiResult<ShowsData> {
+  return ok({ ...mockShowsUpcoming, updatedAt: new Date().toISOString() });
 }
