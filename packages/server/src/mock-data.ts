@@ -8,6 +8,7 @@ import type {
 
 const MOCK = process.env.MOCK !== 'false';
 
+const today = new Date();
 const mockWeather: WeatherData = {
   location: 'Porto Alegre',
   temperature: 22,
@@ -16,6 +17,13 @@ const mockWeather: WeatherData = {
   condition: 'Partly Cloudy',
   icon: 'cloud-sun',
   windSpeed: 12,
+  forecast: [
+    { date: today.toISOString().split('T')[0], high: 24, low: 16, condition: 'Partly Cloudy', icon: 'cloud-sun' },
+    { date: new Date(today.getTime() + 86400000).toISOString().split('T')[0], high: 26, low: 17, condition: 'Sunny', icon: 'sun' },
+    { date: new Date(today.getTime() + 172800000).toISOString().split('T')[0], high: 23, low: 15, condition: 'Rainy', icon: 'cloud-rain' },
+    { date: new Date(today.getTime() + 259200000).toISOString().split('T')[0], high: 21, low: 14, condition: 'Cloudy', icon: 'cloud' },
+    { date: new Date(today.getTime() + 345600000).toISOString().split('T')[0], high: 25, low: 16, condition: 'Sunny', icon: 'sun' },
+  ],
   updatedAt: new Date().toISOString(),
 };
 

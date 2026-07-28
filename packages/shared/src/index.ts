@@ -1,6 +1,7 @@
 export { type ApiResult, ok, err, isOk, isErr, unwrap } from './result.ts';
 export type {
   WeatherData,
+  ForecastDay,
   NewsData,
   NewsItem,
   NewsFilters,

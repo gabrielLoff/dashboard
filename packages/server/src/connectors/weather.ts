@@ -1,4 +1,4 @@
-import type { ApiResult, WeatherData } from '@dashboard/shared';
+import type { ApiResult, WeatherData, ForecastDay } from '@dashboard/shared';
 import { err, getWeatherCondition } from '@dashboard/shared';
 
 interface GeocodingResult {
@@ -16,8 +16,16 @@ interface OpenMeteoCurrent {
   weather_code: number;
 }
 
+interface OpenMeteoDaily {
+  time: string[];
+  temperature_2m_max: number[];
+  temperature_2m_min: number[];
+  weather_code: number[];
+}
+
 interface OpenMeteoResponse {
   current: OpenMeteoCurrent;
+  daily: OpenMeteoDaily;
 }
 
 async function geocode(city: string): Promise<ApiResult<GeocodingResult>> {
@@ -41,8 +49,19 @@ async function geocode(city: string): Promise<ApiResult<GeocodingResult>> {
   }
 }
 
-function buildWeatherData(name: string, current: OpenMeteoCurrent): WeatherData {
+function buildWeatherData(name: string, current: OpenMeteoCurrent, daily: OpenMeteoDaily): WeatherData {
   const condition = getWeatherCondition(current.weather_code);
+
+  const forecast: ForecastDay[] = daily.time.slice(0, 5).map((date, i) => {
+    const dayCondition = getWeatherCondition(daily.weather_code[i]);
+    return {
+      date,
+      high: Math.round(daily.temperature_2m_max[i]),
+      low: Math.round(daily.temperature_2m_min[i]),
+      condition: dayCondition.description,
+      icon: dayCondition.icon,
+    };
+  });
 
   return {
     location: name,
@@ -52,15 +71,18 @@ function buildWeatherData(name: string, current: OpenMeteoCurrent): WeatherData 
     condition: condition.description,
     icon: condition.icon,
     windSpeed: Math.round(current.wind_speed_10m),
+    forecast,
     updatedAt: new Date().toISOString(),
   };
 }
 
-async function fetchForecast(lat: number, lon: number): Promise<ApiResult<OpenMeteoCurrent>> {
+async function fetchForecast(lat: number, lon: number): Promise<ApiResult<OpenMeteoResponse>> {
   const params = new URLSearchParams({
     latitude: String(lat),
     longitude: String(lon),
     current: 'temperature_2m,relative_humidity_2m,apparent_temperature,wind_speed_10m,weather_code',
+    daily: 'temperature_2m_max,temperature_2m_min,weather_code',
+    forecast_days: '5',
   });
 
   const res = await fetch(`https://api.open-meteo.com/v1/forecast?${params.toString()}`);
@@ -70,7 +92,7 @@ async function fetchForecast(lat: number, lon: number): Promise<ApiResult<OpenMe
   }
 
   const json = (await res.json()) as OpenMeteoResponse;
-  return { ok: true, data: json.current };
+  return { ok: true, data: json };
 }
 
 export async function fetchWeather(location: string): Promise<ApiResult<WeatherData>> {
@@ -83,7 +105,7 @@ export async function fetchWeather(location: string): Promise<ApiResult<WeatherD
     const forecastResult = await fetchForecast(latitude, longitude);
     if (!forecastResult.ok) return forecastResult;
 
-    return { ok: true, data: buildWeatherData(name, forecastResult.data) };
+    return { ok: true, data: buildWeatherData(name, forecastResult.data.current, forecastResult.data.daily) };
   } catch (e) {
     return err(e instanceof Error ? e.message : 'Failed to fetch weather');
   }
@@ -94,7 +116,7 @@ export async function fetchWeatherByCoords(lat: number, lon: number): Promise<Ap
     const forecastResult = await fetchForecast(lat, lon);
     if (!forecastResult.ok) return forecastResult;
 
-    return { ok: true, data: buildWeatherData(`${lat.toFixed(2)}, ${lon.toFixed(2)}`, forecastResult.data) };
+    return { ok: true, data: buildWeatherData(`${lat.toFixed(2)}, ${lon.toFixed(2)}`, forecastResult.data.current, forecastResult.data.daily) };
   } catch (e) {
     return err(e instanceof Error ? e.message : 'Failed to fetch weather by coordinates');
   }

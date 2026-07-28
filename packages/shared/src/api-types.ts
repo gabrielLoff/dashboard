@@ -6,7 +6,16 @@ export interface WeatherData {
   condition: string;
   icon: string;
   windSpeed: number;
+  forecast: ForecastDay[];
   updatedAt: string;
+}
+
+export interface ForecastDay {
+  date: string;
+  high: number;
+  low: number;
+  condition: string;
+  icon: string;
 }
 
 export interface NewsItem {

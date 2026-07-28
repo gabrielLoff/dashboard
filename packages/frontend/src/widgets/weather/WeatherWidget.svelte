@@ -4,7 +4,7 @@
   import type { CreateQueryOptions } from '@tanstack/svelte-query';
   import { createQuery } from '@tanstack/svelte-query';
   import { queryKeys, isOk } from '@dashboard/shared';
-  import type { ApiResult, WeatherData } from '@dashboard/shared';
+  import type { ApiResult, WeatherData, ForecastDay } from '@dashboard/shared';
   import { refreshWeather, refreshWeatherByCoords } from '$lib/api-client';
   import { buildWeatherQueryOptions } from '$lib/query-config';
   import { queryClient } from '$lib/query-client';
@@ -69,6 +69,18 @@
       await $query.refetch();
     }
   }
+
+  function formatDayName(dateStr: string): string {
+    const date = new Date(dateStr + 'T00:00:00');
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const target = new Date(date);
+    target.setHours(0, 0, 0, 0);
+    const diff = Math.round((target.getTime() - today.getTime()) / 86400000);
+    if (diff === 0) return 'Today';
+    if (diff === 1) return 'Tomorrow';
+    return date.toLocaleDateString('en-US', { weekday: 'short' });
+  }
 </script>
 
 <WidgetCard
@@ -110,6 +122,17 @@
           <span class="flex items-center gap-1"><Droplets class="h-3 w-3" /> {data.data.humidity}%</span>
           <span class="flex items-center gap-1"><Wind class="h-3 w-3" /> {data.data.windSpeed} km/h</span>
         </div>
+        {#if data.data.forecast.length > 0}
+          <div class="mt-2 flex gap-2 overflow-x-auto">
+            {#each data.data.forecast as day}
+              <div class="flex flex-col items-center gap-1 rounded-lg border border-neutral-100 px-3 py-2 dark:border-neutral-800">
+                <span class="text-xs font-medium text-neutral-500 dark:text-neutral-400">{formatDayName(day.date)}</span>
+                <span class="text-xs text-neutral-400 dark:text-neutral-500">{day.high}°/{day.low}°</span>
+                <span class="text-xs capitalize text-neutral-500 dark:text-neutral-400">{day.condition}</span>
+              </div>
+            {/each}
+          </div>
+        {/if}
       </div>
     {/if}
   {/snippet}
