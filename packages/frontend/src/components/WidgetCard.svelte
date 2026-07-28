@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
-  import { RefreshCw, AlertCircle, ChevronRight, ChevronDown } from 'lucide-svelte';
+  import { RefreshCw, AlertCircle, ChevronRight, ChevronDown, GripVertical } from 'lucide-svelte';
   import { cn, formatTimeAgo } from '$lib/utils';
   import type { WidgetSize } from '$lib/layout-store';
 
@@ -15,6 +15,7 @@
     updatedAt,
     size = 'compact',
     onToggleSize,
+    dragHandle,
     class: className = '',
   }: {
     title: string;
@@ -27,6 +28,7 @@
     updatedAt?: string;
     size?: WidgetSize;
     onToggleSize?: () => void;
+    dragHandle?: Snippet;
     class?: string;
   } = $props();
 
@@ -45,6 +47,9 @@
 <div class={cn('rounded-xl border border-neutral-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900', className)}>
   <div class="flex items-center justify-between border-b border-neutral-200 px-5 py-3 dark:border-neutral-800">
     <div class="flex items-center gap-2">
+      {#if dragHandle}
+        <span class="cursor-grab text-neutral-300 active:cursor-grabbing dark:text-neutral-600">{@render dragHandle()}</span>
+      {/if}
       {#if onToggleSize}
         <button
           onclick={onToggleSize}

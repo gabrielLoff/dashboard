@@ -12,6 +12,31 @@
   import { Toaster } from 'svelte-french-toast';
   import { layoutStore, layout } from '$lib/layout-store';
   import { cn } from '$lib/utils';
+  import { dndzone } from 'svelte-dnd-action';
+  import { GripVertical } from 'lucide-svelte';
+
+  const COMPONENTS: Record<string, any> = {
+    weather: WeatherWidget,
+    news: NewsWidget,
+    agenda: AgendaWidget,
+    games: GamesWidget,
+    habits: HabitWidget,
+  };
+
+  let items = $derived(
+    $layout.order.map((id) => ({ id, component: COMPONENTS[id] })),
+  );
+
+  let flipDurationMs = 200;
+
+  function handleDndConsider(e: CustomEvent) {
+    items = e.detail.items;
+  }
+
+  function handleDndFinalize(e: CustomEvent) {
+    items = e.detail.items;
+    layoutStore.reorder(items.map((item) => item.id));
+  }
 
   onMount(() => {
     themeStore.init();
@@ -37,22 +62,25 @@
       <ThemeToggle />
     </header>
 
-    <main class="grid grid-cols-1 gap-4 lg:grid-cols-2">
-      <div class={cn(getSize('weather') === 'wide' && 'lg:col-span-2')}>
-        <WeatherWidget size={getSize('weather')} onToggleSize={() => toggleSize('weather')} />
-      </div>
-      <div class={cn(getSize('news') === 'wide' && 'lg:col-span-2')}>
-        <NewsWidget size={getSize('news')} onToggleSize={() => toggleSize('news')} />
-      </div>
-      <div class={cn(getSize('agenda') === 'wide' && 'lg:col-span-2')}>
-        <AgendaWidget size={getSize('agenda')} onToggleSize={() => toggleSize('agenda')} />
-      </div>
-      <div class={cn(getSize('games') === 'wide' && 'lg:col-span-2')}>
-        <GamesWidget size={getSize('games')} onToggleSize={() => toggleSize('games')} />
-      </div>
-      <div class={cn(getSize('habits') === 'wide' && 'lg:col-span-2')}>
-        <HabitWidget size={getSize('habits')} onToggleSize={() => toggleSize('habits')} />
-      </div>
+    <main
+      class="grid grid-cols-1 gap-4 lg:grid-cols-2"
+      use:dndzone={{ items, flipDurationMs, type: 'dashboard' }}
+      on:consider={handleDndConsider}
+      on:finalize={handleDndFinalize}
+    >
+      {#each items as item (item.id)}
+        <div class={cn(getSize(item.id) === 'wide' && 'lg:col-span-2')}>
+          <svelte:component
+            this={item.component}
+            size={getSize(item.id)}
+            onToggleSize={() => toggleSize(item.id)}
+          >
+            {#snippet dragHandle()}
+              <GripVertical class="h-4 w-4" />
+            {/snippet}
+          </svelte:component>
+        </div>
+      {/each}
     </main>
   </div>
 </QueryClientProvider>

@@ -8,12 +8,19 @@ export interface WidgetLayout {
   size: WidgetSize;
 }
 
+export const WIDGET_IDS = ['weather', 'news', 'agenda', 'games', 'habits'] as const;
+export type WidgetId = (typeof WIDGET_IDS)[number];
+
 export interface LayoutState {
   widgets: Record<string, WidgetLayout>;
+  order: string[];
 }
+
+const DEFAULT_ORDER: string[] = [...WIDGET_IDS];
 
 const DEFAULT_LAYOUT: LayoutState = {
   widgets: {},
+  order: DEFAULT_ORDER,
 };
 
 function loadFromStorage(): LayoutState {
@@ -22,7 +29,14 @@ function loadFromStorage(): LayoutState {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return DEFAULT_LAYOUT;
     const parsed = JSON.parse(raw);
-    if (parsed && typeof parsed === 'object' && parsed.widgets) return parsed;
+    if (parsed && typeof parsed === 'object' && parsed.widgets) {
+      return {
+        widgets: parsed.widgets,
+        order: Array.isArray(parsed.order) && parsed.order.length > 0
+          ? parsed.order
+          : DEFAULT_ORDER,
+      };
+    }
     return DEFAULT_LAYOUT;
   } catch {
     return DEFAULT_LAYOUT;
@@ -68,6 +82,20 @@ function createStore() {
       });
       unsub();
       return size;
+    },
+    reorder(newOrder: string[]) {
+      update((state) => ({
+        ...state,
+        order: newOrder,
+      }));
+    },
+    getOrder(): string[] {
+      let order: string[] = DEFAULT_ORDER;
+      const unsub = subscribe((state) => {
+        order = state.order;
+      });
+      unsub();
+      return order;
     },
     reset() {
       set(DEFAULT_LAYOUT);
