@@ -6,7 +6,7 @@
   import type { ApiResult, FreeGamesData } from '@dashboard/shared';
   import { refreshGames, fetchGames, type GamesFilters } from '$lib/api-client';
   import { queryClient } from '$lib/query-client';
-  import toast from 'svelte-french-toast';
+  import { createRefreshHandler } from '$lib/refresh';
   import type { WidgetSize } from '$lib/layout-store';
 
   let {
@@ -80,18 +80,12 @@
     }
   }
 
-  async function handleRefresh(opts?: { clear?: boolean }) {
-    if (opts?.clear) {
-      const result = await refreshGames(filters);
-      if (isOk(result)) {
-        queryClient.setQueryData(queryKeys.games.list(filters), result);
-        await queryClient.invalidateQueries({ queryKey: queryKeys.games.list(filters) });
-        toast.success('Cache cleared');
-      }
-      return;
-    }
-    await $query.refetch();
-  }
+  const handleRefresh = createRefreshHandler(
+    queryClient,
+    () => refreshGames(filters),
+    () => queryKeys.games.list(filters),
+    () => $query.refetch(),
+  );
 
   function daysUntil(dateStr: string): string {
     if (!dateStr) return '';

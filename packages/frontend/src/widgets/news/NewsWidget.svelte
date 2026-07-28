@@ -2,11 +2,12 @@
   import { Newspaper, ExternalLink } from 'lucide-svelte';
   import WidgetCard from '../../components/WidgetCard.svelte';
   import { useSourceQuery } from '$lib/query-config';
-  import { isOk, queryKeys, type NewsItem } from '@dashboard/shared';
+  import { isOk, type NewsItem } from '@dashboard/shared';
   import type { ApiResult, NewsData, NewsFilters } from '@dashboard/shared';
-  import { queryClient } from '$lib/query-client';
+  import { queryKeys } from '@dashboard/shared';
   import { refreshNews } from '$lib/api-client';
-  import toast from 'svelte-french-toast';
+  import { queryClient } from '$lib/query-client';
+  import { createRefreshHandler } from '$lib/refresh';
   import type { WidgetSize } from '$lib/layout-store';
 
   let {
@@ -49,18 +50,12 @@
     { value: 'technology', label: 'Technology' },
   ];
 
-  async function handleRefresh(opts?: { clear?: boolean }) {
-    if (opts?.clear) {
-      const result = await refreshNews(filters);
-      if (isOk(result)) {
-        queryClient.setQueryData(queryKeys.news.list(filters), result);
-        await queryClient.invalidateQueries({ queryKey: queryKeys.news.list(filters) });
-        toast.success('Cache cleared');
-      }
-    } else {
-      await $query.refetch();
-    }
-  }
+  const handleRefresh = createRefreshHandler(
+    queryClient,
+    () => refreshNews(filters),
+    () => queryKeys.news.list(filters),
+    () => $query.refetch(),
+  );
 </script>
 
 <WidgetCard

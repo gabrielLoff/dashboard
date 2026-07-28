@@ -6,7 +6,7 @@
   import type { ApiResult, AgendaData } from '@dashboard/shared';
   import { queryClient } from '$lib/query-client';
   import { refreshAgenda } from '$lib/api-client';
-  import toast from 'svelte-french-toast';
+  import { createRefreshHandler } from '$lib/refresh';
   import { formatRelativeDate } from '$lib/utils';
   import type { WidgetSize } from '$lib/layout-store';
 
@@ -24,18 +24,12 @@
   const events = $derived<AgendaEvent[]>(data && isOk(data) ? data.data.events : []);
   const updatedAt = $derived(data && isOk(data) ? data.data.updatedAt : undefined);
 
-  async function handleRefresh(opts?: { clear?: boolean }) {
-    if (opts?.clear) {
-      const result = await refreshAgenda();
-      if (isOk(result)) {
-        queryClient.setQueryData(queryKeys.agenda.list(), result);
-        await queryClient.invalidateQueries({ queryKey: queryKeys.agenda.list() });
-        toast.success('Cache cleared');
-      }
-    } else {
-      await $query.refetch();
-    }
-  }
+  const handleRefresh = createRefreshHandler(
+    queryClient,
+    () => refreshAgenda(),
+    () => queryKeys.agenda.list(),
+    () => $query.refetch(),
+  );
 </script>
 
 <WidgetCard

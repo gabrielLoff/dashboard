@@ -4,11 +4,11 @@
   import type { CreateQueryOptions } from '@tanstack/svelte-query';
   import { createQuery } from '@tanstack/svelte-query';
   import { queryKeys, isOk } from '@dashboard/shared';
-  import type { ApiResult, WeatherData, ForecastDay } from '@dashboard/shared';
+  import type { ApiResult, WeatherData } from '@dashboard/shared';
   import { refreshWeather, refreshWeatherByCoords } from '$lib/api-client';
   import { buildWeatherQueryOptions } from '$lib/query-config';
   import { queryClient } from '$lib/query-client';
-  import toast from 'svelte-french-toast';
+  import { createRefreshHandler } from '$lib/refresh';
   import { getCurrentPosition, type GeolocationCoords } from '$lib/geolocation';
   import { loadLocationCache, saveLocationCache } from '$lib/location-cache';
   import { resolveCityName, resolveCityFromIP } from '$lib/reverse-geocode';
@@ -84,23 +84,16 @@
     }
   }
 
-  async function handleRefresh(opts?: { clear?: boolean }) {
-    if (opts?.clear) {
-      const result = $coords
-        ? await refreshWeatherByCoords($coords.lat, $coords.lon)
-        : await refreshWeather(DEFAULT_LOCATION);
-      const key = $coords
-        ? queryKeys.weather.byCoords($coords.lat, $coords.lon)
-        : queryKeys.weather.current();
-      if (isOk(result)) {
-        queryClient.setQueryData(key as unknown as string[], result);
-        await queryClient.invalidateQueries({ queryKey: key as unknown as string[] });
-        toast.success('Cache cleared');
-      }
-    } else {
-      await $query.refetch();
-    }
-  }
+  const handleRefresh = createRefreshHandler(
+    queryClient,
+    () => $coords
+      ? refreshWeatherByCoords($coords.lat, $coords.lon)
+      : refreshWeather(DEFAULT_LOCATION),
+    () => $coords
+      ? queryKeys.weather.byCoords($coords.lat, $coords.lon)
+      : queryKeys.weather.current(),
+    () => $query.refetch(),
+  );
 
   function formatDayName(dateStr: string): string {
     const date = new Date(dateStr + 'T00:00:00');
