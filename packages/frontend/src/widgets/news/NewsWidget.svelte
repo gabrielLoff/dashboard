@@ -23,6 +23,7 @@
   const countryOptions = [
     { value: '', label: 'All Countries' },
     { value: 'us', label: 'US' },
+    { value: 'br', label: 'BR' },
   ];
 
   const categoryOptions = [
@@ -94,5 +95,11 @@
         </a>
       {/each}
     </div>
+    <p class="mt-3 text-center text-xs text-neutral-400">
+      Powered by
+      <a href="https://www.currentsapi.services" target="_blank" rel="noopener noreferrer" class="underline hover:text-neutral-500">
+        Currents API
+      </a>
+    </p>
   {/snippet}
 </WidgetCard>
