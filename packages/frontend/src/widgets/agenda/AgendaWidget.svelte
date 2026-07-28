@@ -13,6 +13,7 @@
   const data = $derived<ApiResult<AgendaData> | undefined>($query.data);
   const error = $derived($query.data && !isOk($query.data) ? $query.data.error : '');
   const events = $derived<AgendaEvent[]>(data && isOk(data) ? data.data.events : []);
+  const updatedAt = $derived(data && isOk(data) ? data.data.updatedAt : undefined);
 
   async function handleRefresh(opts?: { clear?: boolean }) {
     if (opts?.clear) {
@@ -34,6 +35,7 @@
   isFetching={$query.isFetching}
   error={error}
   onRefresh={handleRefresh}
+  updatedAt={updatedAt}
 >
   {#snippet icon()}
     <Calendar class="h-4 w-4" />

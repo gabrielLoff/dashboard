@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
   import { RefreshCw, AlertCircle } from 'lucide-svelte';
-  import { cn } from '$lib/utils';
+  import { cn, formatTimeAgo } from '$lib/utils';
 
   let {
     title,
@@ -11,6 +11,7 @@
     error,
     onRefresh,
     children,
+    updatedAt,
     class: className = '',
   }: {
     title: string;
@@ -20,8 +21,19 @@
     error: string;
     onRefresh: (opts?: { clear?: boolean }) => void;
     children: Snippet;
+    updatedAt?: string;
     class?: string;
   } = $props();
+
+  let now = $state(Date.now());
+
+  $effect(() => {
+    if (!updatedAt) return;
+    const interval = setInterval(() => { now = Date.now(); }, 60_000);
+    return () => clearInterval(interval);
+  });
+
+  const timeAgo = $derived(updatedAt ? formatTimeAgo(updatedAt) : '');
 </script>
 
 <div class={cn('rounded-xl border border-neutral-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900', className)}>
@@ -64,6 +76,11 @@
         <div class="absolute right-2 top-2">
           <RefreshCw class="h-3 w-3 animate-spin text-neutral-300 dark:text-neutral-600" />
         </div>
+      {/if}
+      {#if updatedAt}
+        <p class="mt-3 text-right text-xs text-neutral-400 dark:text-neutral-500">
+          Updated {timeAgo}
+        </p>
       {/if}
     {/if}
   </div>

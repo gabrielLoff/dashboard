@@ -20,6 +20,7 @@
   const data = $derived<ApiResult<NewsData> | undefined>($query.data);
   const error = $derived($query.data && !isOk($query.data) ? $query.data.error : '');
   const items = $derived<NewsItem[]>(data && isOk(data) ? data.data.items : []);
+  const updatedAt = $derived(data && isOk(data) ? data.data.updatedAt : undefined);
   const hasMore = $derived(items.length > 5);
   const visibleItems = $derived(showAll ? items : items.slice(0, 5));
 
@@ -59,6 +60,7 @@
   isFetching={$query.isFetching}
   error={error}
   onRefresh={handleRefresh}
+  updatedAt={updatedAt}
 >
   {#snippet icon()}
     <Newspaper class="h-4 w-4" />

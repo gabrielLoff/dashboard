@@ -32,6 +32,7 @@
 
   const data = $derived($query.data);
   const error = $derived(data && !isOk(data) ? data.error : '');
+  const updatedAt = $derived(data && isOk(data) ? data.data.updatedAt : undefined);
 
   onMount(async () => {
     const result = await resolveLocation(locationDeps, DEFAULT_LOCATION);
@@ -76,6 +77,7 @@
   isFetching={$query.isFetching}
   error={error}
   onRefresh={handleRefresh}
+  updatedAt={updatedAt}
 >
   {#snippet icon()}
     <CloudSun class="h-4 w-4" />
