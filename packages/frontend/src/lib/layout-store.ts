@@ -30,11 +30,13 @@ function loadFromStorage(): LayoutState {
     if (!raw) return DEFAULT_LAYOUT;
     const parsed = JSON.parse(raw);
     if (parsed && typeof parsed === 'object' && parsed.widgets) {
+      const order = Array.isArray(parsed.order) && parsed.order.length > 0
+        ? parsed.order
+        : DEFAULT_ORDER;
+      const missing = DEFAULT_ORDER.filter((id) => !order.includes(id));
       return {
         widgets: parsed.widgets,
-        order: Array.isArray(parsed.order) && parsed.order.length > 0
-          ? parsed.order
-          : DEFAULT_ORDER,
+        order: [...order, ...missing],
       };
     }
     return DEFAULT_LAYOUT;
