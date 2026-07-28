@@ -77,3 +77,50 @@ export interface DashboardData {
   agenda: AgendaData;
   games: FreeGamesData;
 }
+
+export interface ShowSearchResult {
+  id: number;
+  name: string;
+  status: string;
+  premiered?: string;
+  ended?: string;
+  image?: { medium: string; original: string };
+  network?: { name: string } | null;
+  webChannel?: { name: string } | null;
+  summary?: string;
+}
+
+export interface UpcomingEpisode {
+  showId: number;
+  showName: string;
+  season: number;
+  number: number;
+  title: string;
+  airdate: string;
+  airtime: string;
+  runtime: number;
+  image?: string;
+}
+
+export interface SeasonPremiere {
+  showId: number;
+  showName: string;
+  season: number;
+  premiereDate: string | null;
+  image?: string;
+}
+
+export type UpcomingEntry = UpcomingEpisode | SeasonPremiere;
+
+export function isUpcomingEpisode(entry: UpcomingEntry): entry is UpcomingEpisode {
+  return 'number' in entry;
+}
+
+export function isSeasonPremiere(entry: UpcomingEntry): entry is SeasonPremiere {
+  return !('number' in entry);
+}
+
+export interface ShowsData {
+  upcoming: UpcomingEntry[];
+  updatedAt: string;
+}

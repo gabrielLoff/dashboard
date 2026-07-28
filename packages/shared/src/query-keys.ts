@@ -23,4 +23,10 @@ export const queryKeys = {
     list: (filters?: { type?: string; platform?: string; page?: number }) =>
       [...queryKeys.games.all, filters?.type ?? 'all', filters?.platform ?? 'pc', filters?.page ?? 1] as const,
   },
+
+  shows: {
+    all: ['dashboard', 'shows'] as const,
+    search: (query: string) => [...queryKeys.shows.all, 'search', query] as const,
+    upcoming: (ids: number[]) => [...queryKeys.shows.all, 'upcoming', ...ids.sort((a, b) => a - b)] as const,
+  },
 } as const;
