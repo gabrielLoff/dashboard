@@ -63,7 +63,6 @@ const mockNews: NewsData = {
   updatedAt: new Date().toISOString(),
 };
 
-const today = new Date();
 const tomorrow = new Date(today.getTime() + 86400000);
 const dayAfterTomorrow = new Date(today.getTime() + 172800000);
 const fmt = (d: Date) => d.toISOString().split('T')[0];
