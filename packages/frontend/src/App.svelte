@@ -65,20 +65,19 @@
     <main
       class="grid grid-cols-1 gap-4 lg:grid-cols-2"
       use:dndzone={{ items, flipDurationMs, type: 'dashboard' }}
-      on:consider={handleDndConsider}
-      on:finalize={handleDndFinalize}
+      onconsider={handleDndConsider}
+      onfinalize={handleDndFinalize}
     >
       {#each items as item (item.id)}
         <div class={cn(getSize(item.id) === 'wide' && 'lg:col-span-2')}>
-          <svelte:component
-            this={item.component}
+          <item.component
             size={getSize(item.id)}
             onToggleSize={() => toggleSize(item.id)}
           >
             {#snippet dragHandle()}
               <GripVertical class="h-4 w-4" />
             {/snippet}
-          </svelte:component>
+          </item.component>
         </div>
       {/each}
     </main>
