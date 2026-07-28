@@ -1,4 +1,4 @@
-import type { ApiResult, WeatherData, NewsData, NewsFilters, AgendaData, FreeGamesData } from '@dashboard/shared';
+import type { ApiResult, WeatherData, NewsData, NewsFilters, AgendaData, FreeGamesData, ShowSearchResult, ShowsData } from '@dashboard/shared';
 
 export type { NewsFilters };
 
@@ -81,4 +81,21 @@ export function fetchGames(filters?: GamesFilters): Promise<ApiResult<FreeGamesD
 
 export function refreshGames(filters?: GamesFilters): Promise<ApiResult<FreeGamesData>> {
   return post<FreeGamesData>(`/games/refresh${gamesQueryParams(filters)}`);
+}
+
+export function searchShows(query: string): Promise<ApiResult<ShowSearchResult[]>> {
+  return get<ShowSearchResult[]>(`/shows/search?q=${encodeURIComponent(query)}`);
+}
+
+export function fetchUpcoming(ids: number[]): Promise<ApiResult<ShowsData>> {
+  if (ids.length === 0) {
+    return Promise.resolve({ ok: true, data: { upcoming: [], updatedAt: new Date().toISOString() } });
+  }
+  const param = ids.join(',');
+  return get<ShowsData>(`/shows/upcoming?ids=${param}`);
+}
+
+export function refreshUpcoming(ids: number[]): Promise<ApiResult<ShowsData>> {
+  const param = ids.join(',');
+  return post<ShowsData>(`/shows/upcoming/refresh?ids=${param}`);
 }

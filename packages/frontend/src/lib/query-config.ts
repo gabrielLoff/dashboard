@@ -6,10 +6,11 @@ import {
   fetchNews,
   fetchAgenda,
   fetchGames,
+  fetchUpcoming,
 } from './api-client';
 import type { GamesFilters, NewsFilters } from './api-client';
 
-export type SourceName = 'weather' | 'news' | 'agenda' | 'games';
+export type SourceName = 'weather' | 'news' | 'agenda' | 'games' | 'shows';
 
 interface SourceConfig {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -44,6 +45,12 @@ const sourceConfigs: Record<SourceName, SourceConfig> = {
     fn: (filters?: GamesFilters) => fetchGames(filters),
     staleTime: 6 * 60 * 60 * 1000,
     refetchInterval: 12 * 60 * 60 * 1000,
+  },
+  shows: {
+    key: (ids?: number[]) => queryKeys.shows.upcoming(ids ?? []),
+    fn: (ids?: number[]) => fetchUpcoming(ids ?? []),
+    staleTime: 5 * 60 * 1000,
+    refetchInterval: 10 * 60 * 1000,
   },
 };
 
