@@ -10,6 +10,7 @@
 
   let countryFilter = $state<string>('');
   let categoryFilter = $state<string>('general');
+  let showAll = $state(false);
 
   const filters = $derived<NewsFilters>({
     country: countryFilter || undefined,
@@ -19,6 +20,8 @@
   const data = $derived<ApiResult<NewsData> | undefined>($query.data);
   const error = $derived($query.data && !isOk($query.data) ? $query.data.error : '');
   const items = $derived<NewsItem[]>(data && isOk(data) ? data.data.items : []);
+  const hasMore = $derived(items.length > 5);
+  const visibleItems = $derived(showAll ? items : items.slice(0, 5));
 
   const countryOptions = [
     { value: '', label: 'All Countries' },
@@ -79,9 +82,28 @@
         {/each}
       </select>
     </div>
-    <div class="max-h-96 overflow-y-auto">
+    {#if showAll}
+      <div class="max-h-96 overflow-y-auto">
+        <div class="flex flex-col gap-3">
+          {#each visibleItems as item (item.id)}
+            <a
+              href={item.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="group rounded-lg p-2 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800"
+            >
+              <div class="flex items-start justify-between gap-2">
+                <p class="text-sm font-medium group-hover:text-primary-600">{item.title}</p>
+                <ExternalLink class="mt-0.5 h-3 w-3 shrink-0 text-neutral-300 group-hover:text-primary-500" />
+              </div>
+              <p class="mt-1 text-xs text-neutral-500 dark:text-neutral-400">{item.source}</p>
+            </a>
+          {/each}
+        </div>
+      </div>
+    {:else}
       <div class="flex flex-col gap-3">
-        {#each items as item (item.id)}
+        {#each visibleItems as item (item.id)}
           <a
             href={item.url}
             target="_blank"
@@ -96,7 +118,17 @@
           </a>
         {/each}
       </div>
-    </div>
+    {/if}
+    {#if hasMore}
+      <div class="mt-3 flex justify-center">
+        <button
+          onclick={() => (showAll = !showAll)}
+          class="rounded-md border border-neutral-200 px-3 py-1.5 text-xs text-neutral-600 transition-colors hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-400 dark:hover:bg-neutral-800"
+        >
+          {showAll ? 'Show less' : `Show all (${items.length})`}
+        </button>
+      </div>
+    {/if}
     <p class="mt-3 text-center text-xs text-neutral-400">
       Powered by
       <a href="https://www.currentsapi.services" target="_blank" rel="noopener noreferrer" class="underline hover:text-neutral-500">
