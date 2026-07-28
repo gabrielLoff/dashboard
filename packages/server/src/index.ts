@@ -6,13 +6,15 @@ import { createWeatherRoute } from './routes/weather.ts';
 import { createNewsRoute } from './routes/news.ts';
 import { createAgendaRoute } from './routes/agenda.ts';
 import { createGamesRoute } from './routes/games.ts';
+import { createShowsRoute } from './routes/shows.ts';
 import { fetchWeather, fetchWeatherByCoords } from './connectors/weather.ts';
 import { fetchNews, type NewsFilters } from './connectors/news.ts';
 import { fetchAgenda } from './connectors/agenda.ts';
 import { fetchGames, type GamesFilters } from './connectors/games.ts';
-import { getMockWeather, getMockNews, getMockAgenda, getMockGames } from './mock-data.ts';
+import { searchShows, getUpcomingEpisodes } from './connectors/shows.ts';
+import { getMockWeather, getMockNews, getMockAgenda, getMockGames, getMockShows, getMockShowsUpcoming } from './mock-data.ts';
 import { getAccessToken } from './lib/google-auth.ts';
-import type { ApiResult, WeatherData, NewsData, AgendaData, FreeGamesData } from '@dashboard/shared';
+import type { ApiResult, WeatherData, NewsData, AgendaData, FreeGamesData, ShowSearchResult, ShowsData } from '@dashboard/shared';
 
 type CalendarStatus = 'connected' | 'missing-refresh-token';
 
@@ -47,16 +49,24 @@ const fetchAgenda_ = mockMode
 const fetchGames_ = mockMode
   ? (() => Promise.resolve(getMockGames())) as (filters: GamesFilters) => Promise<ApiResult<FreeGamesData>>
   : fetchGames;
+const searchShows_ = mockMode
+  ? ((q: string) => Promise.resolve(getMockShows())) as (query: string) => Promise<ApiResult<ShowSearchResult[]>>
+  : searchShows;
+const getUpcomingEpisodes_ = mockMode
+  ? ((ids: number[]) => Promise.resolve(getMockShowsUpcoming())) as (ids: number[]) => Promise<ApiResult<ShowsData>>
+  : getUpcomingEpisodes;
 
 const weatherRoute = createWeatherRoute(fetchWeather_, fetchWeatherByCoords_);
 const newsRoute = createNewsRoute(fetchNews_);
 const agendaRoute = createAgendaRoute(fetchAgenda_);
 const gamesRoute = createGamesRoute(fetchGames_);
+const showsRoute = createShowsRoute(searchShows_, getUpcomingEpisodes_);
 
 app.route('/api/weather', weatherRoute);
 app.route('/api/news', newsRoute);
 app.route('/api/agenda', agendaRoute);
 app.route('/api/games', gamesRoute);
+app.route('/api/shows', showsRoute);
 
 const port = Number(process.env.PORT) || 3001;
 
