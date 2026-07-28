@@ -90,13 +90,25 @@
               href={item.url}
               target="_blank"
               rel="noopener noreferrer"
-              class="group rounded-lg p-2 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800"
+              class="group flex gap-3 rounded-lg p-2 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800"
             >
-              <div class="flex items-start justify-between gap-2">
-                <p class="text-sm font-medium group-hover:text-primary-600">{item.title}</p>
-                <ExternalLink class="mt-0.5 h-3 w-3 shrink-0 text-neutral-300 group-hover:text-primary-500" />
+              {#if item.imageUrl}
+                <img
+                  src={item.imageUrl}
+                  alt=""
+                  class="h-16 w-16 shrink-0 rounded object-cover"
+                />
+              {/if}
+              <div class="min-w-0 flex-1">
+                <div class="flex items-start justify-between gap-2">
+                  <p class="text-sm font-medium group-hover:text-primary-600">{item.title}</p>
+                  <ExternalLink class="mt-0.5 h-3 w-3 shrink-0 text-neutral-300 group-hover:text-primary-500" />
+                </div>
+                <p class="mt-1 text-xs text-neutral-500 dark:text-neutral-400">{item.source}</p>
+                {#if item.summary}
+                  <p class="mt-1 line-clamp-2 text-xs text-neutral-400 dark:text-neutral-500">{item.summary}</p>
+                {/if}
               </div>
-              <p class="mt-1 text-xs text-neutral-500 dark:text-neutral-400">{item.source}</p>
             </a>
           {/each}
         </div>
@@ -108,13 +120,25 @@
             href={item.url}
             target="_blank"
             rel="noopener noreferrer"
-            class="group rounded-lg p-2 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800"
+            class="group flex gap-3 rounded-lg p-2 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800"
           >
-            <div class="flex items-start justify-between gap-2">
-              <p class="text-sm font-medium group-hover:text-primary-600">{item.title}</p>
-              <ExternalLink class="mt-0.5 h-3 w-3 shrink-0 text-neutral-300 group-hover:text-primary-500" />
+            {#if item.imageUrl}
+              <img
+                src={item.imageUrl}
+                alt=""
+                class="h-16 w-16 shrink-0 rounded object-cover"
+              />
+            {/if}
+            <div class="min-w-0 flex-1">
+              <div class="flex items-start justify-between gap-2">
+                <p class="text-sm font-medium group-hover:text-primary-600">{item.title}</p>
+                <ExternalLink class="mt-0.5 h-3 w-3 shrink-0 text-neutral-300 group-hover:text-primary-500" />
+              </div>
+              <p class="mt-1 text-xs text-neutral-500 dark:text-neutral-400">{item.source}</p>
+              {#if item.summary}
+                <p class="mt-1 line-clamp-2 text-xs text-neutral-400 dark:text-neutral-500">{item.summary}</p>
+              {/if}
             </div>
-            <p class="mt-1 text-xs text-neutral-500 dark:text-neutral-400">{item.source}</p>
           </a>
         {/each}
       </div>
