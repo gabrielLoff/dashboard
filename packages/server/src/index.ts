@@ -7,6 +7,7 @@ import { createNewsRoute } from './routes/news.ts';
 import { createAgendaRoute } from './routes/agenda.ts';
 import { createGamesRoute } from './routes/games.ts';
 import { createShowsRoute } from './routes/shows.ts';
+import { createSyncRoute } from './routes/sync.ts';
 import { fetchWeather, fetchWeatherByCoords } from './connectors/weather.ts';
 import { fetchNews, type NewsFilters } from './connectors/news.ts';
 import { fetchAgenda } from './connectors/agenda.ts';
@@ -61,12 +62,14 @@ const newsRoute = createNewsRoute(fetchNews_);
 const agendaRoute = createAgendaRoute(fetchAgenda_);
 const gamesRoute = createGamesRoute(fetchGames_);
 const showsRoute = createShowsRoute(searchShows_, getUpcomingEpisodes_);
+const syncRoute = createSyncRoute();
 
 app.route('/api/weather', weatherRoute);
 app.route('/api/news', newsRoute);
 app.route('/api/agenda', agendaRoute);
 app.route('/api/games', gamesRoute);
 app.route('/api/shows', showsRoute);
+app.route('/api/sync', syncRoute);
 
 const port = Number(process.env.PORT) || 3001;
 
