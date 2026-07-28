@@ -10,10 +10,20 @@
   import GamesWidget from '$widgets/games/GamesWidget.svelte';
   import HabitWidget from '$widgets/habits/HabitWidget.svelte';
   import { Toaster } from 'svelte-french-toast';
+  import { layoutStore, layout } from '$lib/layout-store';
+  import { cn } from '$lib/utils';
 
   onMount(() => {
     themeStore.init();
   });
+
+  function getSize(id: string): 'compact' | 'wide' {
+    return $layout.widgets[id]?.size ?? 'compact';
+  }
+
+  function toggleSize(id: string) {
+    layoutStore.toggleSize(id);
+  }
 </script>
 
 <QueryClientProvider client={queryClient}>
@@ -28,11 +38,21 @@
     </header>
 
     <main class="grid grid-cols-1 gap-4 lg:grid-cols-2">
-      <WeatherWidget />
-      <NewsWidget />
-      <AgendaWidget />
-      <GamesWidget />
-      <HabitWidget />
+      <div class={cn(getSize('weather') === 'wide' && 'lg:col-span-2')}>
+        <WeatherWidget size={getSize('weather')} onToggleSize={() => toggleSize('weather')} />
+      </div>
+      <div class={cn(getSize('news') === 'wide' && 'lg:col-span-2')}>
+        <NewsWidget size={getSize('news')} onToggleSize={() => toggleSize('news')} />
+      </div>
+      <div class={cn(getSize('agenda') === 'wide' && 'lg:col-span-2')}>
+        <AgendaWidget size={getSize('agenda')} onToggleSize={() => toggleSize('agenda')} />
+      </div>
+      <div class={cn(getSize('games') === 'wide' && 'lg:col-span-2')}>
+        <GamesWidget size={getSize('games')} onToggleSize={() => toggleSize('games')} />
+      </div>
+      <div class={cn(getSize('habits') === 'wide' && 'lg:col-span-2')}>
+        <HabitWidget size={getSize('habits')} onToggleSize={() => toggleSize('habits')} />
+      </div>
     </main>
   </div>
 </QueryClientProvider>

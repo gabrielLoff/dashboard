@@ -10,6 +10,15 @@
     getWeekDates,
     formatDate,
   } from '$lib/habit-store';
+  import type { WidgetSize } from '$lib/layout-store';
+
+  let {
+    size = 'compact',
+    onToggleSize,
+  }: {
+    size?: WidgetSize;
+    onToggleSize?: () => void;
+  } = $props();
 
   const today = $derived(formatDate(new Date()));
   const completedToday = $derived($habits.filter((h) => h.completions[today]).length);
@@ -50,6 +59,8 @@
   error=""
   onRefresh={handleRefresh}
   updatedAt={undefined}
+  {size}
+  {onToggleSize}
 >
   {#snippet icon()}
     <CheckCircle class="h-4 w-4" />

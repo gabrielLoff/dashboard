@@ -1,7 +1,8 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
-  import { RefreshCw, AlertCircle } from 'lucide-svelte';
+  import { RefreshCw, AlertCircle, ChevronRight, ChevronDown } from 'lucide-svelte';
   import { cn, formatTimeAgo } from '$lib/utils';
+  import type { WidgetSize } from '$lib/layout-store';
 
   let {
     title,
@@ -12,6 +13,8 @@
     onRefresh,
     children,
     updatedAt,
+    size = 'compact',
+    onToggleSize,
     class: className = '',
   }: {
     title: string;
@@ -22,6 +25,8 @@
     onRefresh: (opts?: { clear?: boolean }) => void;
     children: Snippet;
     updatedAt?: string;
+    size?: WidgetSize;
+    onToggleSize?: () => void;
     class?: string;
   } = $props();
 
@@ -34,11 +39,25 @@
   });
 
   const timeAgo = $derived(updatedAt ? formatTimeAgo(updatedAt) : '');
+  const isWide = $derived(size === 'wide');
 </script>
 
 <div class={cn('rounded-xl border border-neutral-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900', className)}>
   <div class="flex items-center justify-between border-b border-neutral-200 px-5 py-3 dark:border-neutral-800">
     <div class="flex items-center gap-2">
+      {#if onToggleSize}
+        <button
+          onclick={onToggleSize}
+          class="rounded-md p-1 text-neutral-400 transition-colors hover:bg-neutral-100 hover:text-neutral-600 dark:hover:bg-neutral-800 dark:hover:text-neutral-300"
+          title={isWide ? 'Switch to compact' : 'Switch to wide'}
+        >
+          {#if isWide}
+            <ChevronDown class="h-4 w-4" />
+          {:else}
+            <ChevronRight class="h-4 w-4" />
+          {/if}
+        </button>
+      {/if}
       {#if icon}
         <span class="text-neutral-500 dark:text-neutral-400">{@render icon()}</span>
       {/if}

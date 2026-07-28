@@ -15,6 +15,15 @@
   import { resolveLocation } from '$lib/weather-location';
   import { CloudSun, Thermometer, Droplets, Wind, MapPin } from 'lucide-svelte';
   import WidgetCard from '../../components/WidgetCard.svelte';
+  import type { WidgetSize } from '$lib/layout-store';
+
+  let {
+    size = 'compact',
+    onToggleSize,
+  }: {
+    size?: WidgetSize;
+    onToggleSize?: () => void;
+  } = $props();
 
   const DEFAULT_LOCATION = 'Porto Alegre';
   const locationDeps = { getCurrentPosition, resolveCityName, resolveCityFromIP, loadLocationCache, saveLocationCache };
@@ -90,6 +99,8 @@
   error={error}
   onRefresh={handleRefresh}
   updatedAt={updatedAt}
+  {size}
+  {onToggleSize}
 >
   {#snippet icon()}
     <CloudSun class="h-4 w-4" />

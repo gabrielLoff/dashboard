@@ -7,6 +7,15 @@
   import { queryClient } from '$lib/query-client';
   import { refreshNews } from '$lib/api-client';
   import toast from 'svelte-french-toast';
+  import type { WidgetSize } from '$lib/layout-store';
+
+  let {
+    size = 'compact',
+    onToggleSize,
+  }: {
+    size?: WidgetSize;
+    onToggleSize?: () => void;
+  } = $props();
 
   let countryFilter = $state<string>('');
   let categoryFilter = $state<string>('general');
@@ -61,6 +70,8 @@
   error={error}
   onRefresh={handleRefresh}
   updatedAt={updatedAt}
+  {size}
+  {onToggleSize}
 >
   {#snippet icon()}
     <Newspaper class="h-4 w-4" />

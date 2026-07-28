@@ -7,6 +7,15 @@
   import { refreshGames, fetchGames, type GamesFilters } from '$lib/api-client';
   import { queryClient } from '$lib/query-client';
   import toast from 'svelte-french-toast';
+  import type { WidgetSize } from '$lib/layout-store';
+
+  let {
+    size = 'compact',
+    onToggleSize,
+  }: {
+    size?: WidgetSize;
+    onToggleSize?: () => void;
+  } = $props();
 
   let typeFilter = $state<string>('all');
   let platformFilter = $state<string>('pc');
@@ -103,6 +112,8 @@
   error={error}
   onRefresh={handleRefresh}
   updatedAt={updatedAt}
+  {size}
+  {onToggleSize}
 >
   {#snippet icon()}
     <Gamepad2 class="h-4 w-4" />
