@@ -8,6 +8,7 @@
   import NewsWidget from '$widgets/news/NewsWidget.svelte';
   import AgendaWidget from '$widgets/agenda/AgendaWidget.svelte';
   import GamesWidget from '$widgets/games/GamesWidget.svelte';
+  import HabitWidget from '$widgets/habits/HabitWidget.svelte';
   import { Toaster } from 'svelte-french-toast';
 
   onMount(() => {
@@ -31,6 +32,7 @@
       <NewsWidget />
       <AgendaWidget />
       <GamesWidget />
+      <HabitWidget />
     </main>
   </div>
 </QueryClientProvider>
