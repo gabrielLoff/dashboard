@@ -29,6 +29,7 @@ const mockNews: NewsData = {
       publishedAt: new Date(Date.now() - 3600000).toISOString(),
       summary:
         'Node.js 24 introduces a novel runtime architecture that promises 40% faster startup times for serverless environments.',
+      imageUrl: 'https://placehold.co/200x120/6366f1/ffffff?text=Node.js',
     },
     {
       id: '2',
@@ -38,6 +39,7 @@ const mockNews: NewsData = {
       publishedAt: new Date(Date.now() - 7200000).toISOString(),
       summary:
         'One year after the stable release, the community weighs in on how runes changed the Svelte development experience.',
+      imageUrl: 'https://placehold.co/200x120/8b5cf6/ffffff?text=Svelte',
     },
     {
       id: '3',
@@ -47,6 +49,7 @@ const mockNews: NewsData = {
       publishedAt: new Date(Date.now() - 10800000).toISOString(),
       summary:
         'Tauri v2 has doubled its adoption rate in 2026, overtaking Electron in new desktop app starts for the first time.',
+      imageUrl: 'https://placehold.co/200x120/ec4899/ffffff?text=Tauri',
     },
   ],
   updatedAt: new Date().toISOString(),

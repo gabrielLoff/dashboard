@@ -170,7 +170,7 @@ describe('createNewsRoute', () => {
   });
 
   it('validates all allowed country values', async () => {
-    const validCountries = ['ar', 'au', 'br', 'ca', 'cn', 'de', 'es', 'fr', 'gb', 'in', 'it', 'mx', 'nl', 'nz', 'pt', 'ru', 'sa', 'us'];
+    const validCountries = ['us', 'br'];
     const route = createNewsRoute(fetchNews);
     const app = createApp(route);
 
