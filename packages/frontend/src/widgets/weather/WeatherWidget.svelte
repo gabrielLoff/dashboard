@@ -60,6 +60,7 @@
     bolt: BoltAnimation,
   };
 
+  const data = $derived($query.data);
   const weatherIcon = $derived(data && isOk(data) ? data.data.icon : '');
   const AnimationComponent = $derived(ANIMATION_MAP[weatherIcon] ?? null);
   const error = $derived(data && !isOk(data) ? data.error : '');
