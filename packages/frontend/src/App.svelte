@@ -8,6 +8,7 @@
   import NewsWidget from '$widgets/news/NewsWidget.svelte';
   import AgendaWidget from '$widgets/agenda/AgendaWidget.svelte';
   import GamesWidget from '$widgets/games/GamesWidget.svelte';
+  import ShowsWidget from '$widgets/shows/ShowsWidget.svelte';
   import HabitWidget from '$widgets/habits/HabitWidget.svelte';
   import { Toaster } from 'svelte-french-toast';
   import { layoutStore, layout } from '$lib/layout-store';
@@ -20,6 +21,7 @@
     news: NewsWidget,
     agenda: AgendaWidget,
     games: GamesWidget,
+    shows: ShowsWidget,
     habits: HabitWidget,
   };
 

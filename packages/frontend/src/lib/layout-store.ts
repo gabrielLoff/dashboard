@@ -8,7 +8,7 @@ export interface WidgetLayout {
   size: WidgetSize;
 }
 
-export const WIDGET_IDS = ['weather', 'news', 'agenda', 'games', 'habits'] as const;
+export const WIDGET_IDS = ['weather', 'news', 'agenda', 'games', 'shows', 'habits'] as const;
 export type WidgetId = (typeof WIDGET_IDS)[number];
 
 export interface LayoutState {
