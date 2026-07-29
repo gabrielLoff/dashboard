@@ -1,4 +1,4 @@
-import { writable, derived, get } from 'svelte/store';
+import { writable, derived } from 'svelte/store';
 
 const STORAGE_KEY = 'dashboard-habits';
 
@@ -171,6 +171,9 @@ function createStore() {
     subscribe,
     dispatch(action: HabitAction) {
       update((state) => habitReducer(state, action));
+    },
+    setHabits(habits: Habit[]) {
+      set({ habits });
     },
     reset() {
       set({ habits: [] });

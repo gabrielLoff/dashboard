@@ -15,6 +15,7 @@
   import { cn } from '$lib/utils';
   import { dndzone } from 'svelte-dnd-action';
   import { GripVertical } from 'lucide-svelte';
+  import { initSync } from '$lib/sync-service';
 
   const COMPONENTS: Record<string, any> = {
     weather: WeatherWidget,
@@ -42,6 +43,7 @@
 
   onMount(() => {
     themeStore.init();
+    initSync();
   });
 
   function getSize(id: string): 'compact' | 'wide' {
