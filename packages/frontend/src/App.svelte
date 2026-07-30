@@ -12,10 +12,10 @@
   import HabitWidget from '$widgets/habits/HabitWidget.svelte';
   import { Toaster } from 'svelte-french-toast';
   import { layoutStore, layout } from '$lib/layout-store';
-  import { cn } from '$lib/utils';
-  import { dndzone } from 'svelte-dnd-action';
   import { GripVertical } from 'lucide-svelte';
   import { initSync } from '$lib/sync-service';
+  import Masonry from 'svelte-bricks';
+  import { segmentItems } from '$lib/segment-items';
 
   const COMPONENTS: Record<string, any> = {
     weather: WeatherWidget,
@@ -26,19 +26,66 @@
     habits: HabitWidget,
   };
 
-  let items = $derived(
-    $layout.order.map((id) => ({ id, component: COMPONENTS[id] })),
-  );
-
-  let flipDurationMs = 200;
-
-  function handleDndConsider(e: CustomEvent) {
-    items = e.detail.items;
+  interface AppItem {
+    id: string;
+    component: any;
   }
 
-  function handleDndFinalize(e: CustomEvent) {
-    items = e.detail.items;
-    layoutStore.reorder(items.map((item) => item.id));
+  let allItems = $derived(
+    $layout.order.map((id): AppItem => ({ id, component: COMPONENTS[id] })),
+  );
+
+  let widgetSizes = $derived(
+    Object.fromEntries(
+      Object.entries($layout.widgets).map(([id, w]) => [id, w.size])
+    ),
+  );
+
+  let segments = $derived(segmentItems(allItems, widgetSizes));
+
+  let draggedId: string | null = $state(null);
+  let dragOverId: string | null = $state(null);
+
+  function handleDragStart(e: DragEvent, id: string) {
+    draggedId = id;
+    if (e.dataTransfer) {
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', id);
+    }
+  }
+
+  function handleDragOver(e: DragEvent, id: string) {
+    e.preventDefault();
+    if (e.dataTransfer) {
+      e.dataTransfer.dropEffect = 'move';
+    }
+    if (dragOverId !== id) {
+      dragOverId = id;
+    }
+  }
+
+  function handleDragLeave() {
+    dragOverId = null;
+  }
+
+  function handleDrop(e: DragEvent, targetId: string) {
+    e.preventDefault();
+    dragOverId = null;
+    if (!draggedId || draggedId === targetId) return;
+
+    const currentOrder = layoutStore.getOrder();
+    const from = currentOrder.indexOf(draggedId);
+    const to = currentOrder.indexOf(targetId);
+    const newOrder = [...currentOrder];
+    newOrder.splice(from, 1);
+    newOrder.splice(to, 0, draggedId);
+    layoutStore.reorder(newOrder);
+    draggedId = null;
+  }
+
+  function handleDragEnd() {
+    draggedId = null;
+    dragOverId = null;
   }
 
   onMount(() => {
@@ -46,12 +93,17 @@
     initSync();
   });
 
-  function getSize(id: string): 'compact' | 'wide' {
-    return $layout.widgets[id]?.size ?? 'compact';
-  }
-
   function toggleSize(id: string) {
     layoutStore.toggleSize(id);
+  }
+
+  function segmentKey(segment: { type: string; items: { id: string }[] }): string {
+    if (segment.type === 'wide') return `wide-${segment.items[0]?.id}`;
+    return `masonry-${segment.items.map((i) => i.id).join('-')}`;
+  }
+
+  function findItem(id: string): AppItem | undefined {
+    return allItems.find((item) => item.id === id);
   }
 </script>
 
@@ -66,24 +118,86 @@
       <ThemeToggle />
     </header>
 
-    <main
-      class="grid grid-cols-1 gap-4 lg:grid-cols-2"
-      use:dndzone={{ items, flipDurationMs, type: 'dashboard' }}
-      onconsider={handleDndConsider}
-      onfinalize={handleDndFinalize}
-    >
-      {#each items as item (item.id)}
-        <div class={cn(getSize(item.id) === 'wide' && 'lg:col-span-2')}>
-          <item.component
-            size={getSize(item.id)}
-            onToggleSize={() => toggleSize(item.id)}
+    <main class="flex flex-col gap-4">
+      {#each segments as segment (segmentKey(segment))}
+        {#if segment.type === 'wide'}
+          {@const item = findItem(segment.items[0].id)}
+          {#if item}
+            <div
+              class="drag-item"
+              class:dragging={draggedId === item.id}
+              class:drag-over={dragOverId === item.id}
+              role="listitem"
+              draggable="true"
+              ondragstart={(e) => handleDragStart(e, item.id)}
+              ondragover={(e) => handleDragOver(e, item.id)}
+              ondragleave={handleDragLeave}
+              ondrop={(e) => handleDrop(e, item.id)}
+              ondragend={handleDragEnd}
+            >
+              <item.component
+                size="wide"
+                onToggleSize={() => toggleSize(item.id)}
+              >
+                {#snippet dragHandle()}
+                  <GripVertical class="h-4 w-4" />
+                {/snippet}
+              </item.component>
+            </div>
+          {/if}
+        {:else}
+          <Masonry
+            items={segment.items}
+            minColWidth={300}
+            maxColWidth={500}
+            gap={16}
+            getId={(item) => item.id}
           >
-            {#snippet dragHandle()}
-              <GripVertical class="h-4 w-4" />
+            {#snippet children({ item: masonryItem })}
+              {@const appItem = findItem(masonryItem.id)}
+              {#if appItem}
+                <div
+                  class="drag-item"
+                  class:dragging={draggedId === appItem.id}
+                  class:drag-over={dragOverId === appItem.id}
+                  role="listitem"
+                  draggable="true"
+                  ondragstart={(e) => handleDragStart(e, appItem.id)}
+                  ondragover={(e) => handleDragOver(e, appItem.id)}
+                  ondragleave={handleDragLeave}
+                  ondrop={(e) => handleDrop(e, appItem.id)}
+                  ondragend={handleDragEnd}
+                >
+                  <appItem.component
+                    size="compact"
+                    onToggleSize={() => toggleSize(appItem.id)}
+                  >
+                    {#snippet dragHandle()}
+                      <GripVertical class="h-4 w-4" />
+                    {/snippet}
+                  </appItem.component>
+                </div>
+              {/if}
             {/snippet}
-          </item.component>
-        </div>
+          </Masonry>
+        {/if}
       {/each}
     </main>
   </div>
 </QueryClientProvider>
+
+<style>
+  .drag-item {
+    transition: outline 150ms ease, opacity 150ms ease;
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+  }
+
+  .drag-item.drag-over {
+    outline: 2px dashed oklch(0.6 0.15 250);
+  }
+
+  .drag-item.dragging {
+    opacity: 0.5;
+  }
+</style>
