@@ -1,6 +1,6 @@
 import type { Habit } from './habit-store';
 import type { WatchlistEntry } from './show-store';
-import type { LayoutState } from './layout-store';
+import type { LayoutState, WidgetLayout } from './layout-store';
 import type { ApiResult } from '@dashboard/shared';
 import { get } from 'svelte/store';
 import { habitStore } from './habit-store';
@@ -48,7 +48,7 @@ export async function pushWatchlist(entries: WatchlistEntry[]): Promise<void> {
   if (!res.ok) throw new Error(`pushWatchlist failed: ${res.status}`);
 }
 
-export async function pushLayout(order: string[], widgets: Record<string, { size: string }>): Promise<void> {
+export async function pushLayout(order: string[], widgets: Record<string, WidgetLayout>): Promise<void> {
   const res = await fetch(`${BASE}/sync/layout`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
@@ -104,8 +104,13 @@ export async function initSync(): Promise<SyncData | null> {
     layoutStore.reset();
     layoutStore.reorder(mergedOrder);
     for (const [id, widgetLayout] of Object.entries(serverData.layout.widgets)) {
-      if (widgetLayout.size === 'wide') {
-        layoutStore.toggleSize(id);
+      if ('size' in widgetLayout) {
+        const isWide = (widgetLayout as { size: string }).size === 'wide';
+        layoutStore.updatePosition(id, isWide
+          ? { col: 0, row: 0, colSpan: 6, rowSpan: 2 }
+          : { col: 0, row: 0, colSpan: 2, rowSpan: 2 });
+      } else {
+        layoutStore.updatePosition(id, widgetLayout as WidgetLayout);
       }
     }
 
@@ -155,7 +160,7 @@ export function pushWatchlistSafe(entries: WatchlistEntry[]): void {
   });
 }
 
-export function pushLayoutSafe(order: string[], widgets: Record<string, { size: string }>): void {
+export function pushLayoutSafe(order: string[], widgets: Record<string, WidgetLayout>): void {
   pushLayout(order, widgets).catch(() => {
     const state = get(layoutStore);
     queuePush(() => pushLayout(state.order, state.widgets));
