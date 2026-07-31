@@ -151,7 +151,7 @@ describe('createSyncRoute', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           order: ['weather', 'habits'],
-          widgets: { weather: { size: 'wide' } },
+          widgets: { weather: { col: 0, row: 0, colSpan: 6, rowSpan: 3 } },
         }),
       });
 
@@ -159,7 +159,7 @@ describe('createSyncRoute', () => {
       const row = db.prepare("SELECT * FROM layout WHERE key = 'dashboard'").get() as { value: string };
       const parsed = JSON.parse(row.value);
       expect(parsed.order).toEqual(['weather', 'habits']);
-      expect(parsed.widgets.weather.size).toBe('wide');
+      expect(parsed.widgets.weather).toEqual({ col: 0, row: 0, colSpan: 6, rowSpan: 3 });
     });
 
     it('replaces existing layout', async () => {
