@@ -45,7 +45,7 @@ export function createSyncRoute(): Hono {
             addedAt: w.added_at,
           })),
           layout: layoutRow
-            ? (JSON.parse(layoutRow.value) as { order: string[]; widgets: Record<string, { size: string }> })
+            ? (JSON.parse(layoutRow.value) as { order: string[]; widgets: Record<string, { col: number; row: number; colSpan: number; rowSpan: number }> })
             : { order: ['weather', 'news', 'agenda', 'games', 'shows', 'habits'], widgets: {} },
         },
       });
@@ -81,7 +81,23 @@ export function createSyncRoute(): Hono {
       return c.json({ ok: true });
     })
     .put('/layout', async (c) => {
-      const body = await c.req.json() as { order: string[]; widgets: Record<string, { size: string }> };
+      const body = await c.req.json() as { order: string[]; widgets: Record<string, { col: number; row: number; colSpan: number; rowSpan: number }> };
+
+      for (const [id, w] of Object.entries(body.widgets)) {
+        if (typeof w.col !== 'number' || w.col < 0 || w.col > 5) {
+          return c.json({ ok: false, error: `Invalid col for ${id}: must be 0-5` }, 400);
+        }
+        if (typeof w.row !== 'number' || w.row < 0) {
+          return c.json({ ok: false, error: `Invalid row for ${id}: must be >= 0` }, 400);
+        }
+        if (typeof w.colSpan !== 'number' || w.colSpan < 1 || w.colSpan > 6) {
+          return c.json({ ok: false, error: `Invalid colSpan for ${id}: must be 1-6` }, 400);
+        }
+        if (typeof w.rowSpan !== 'number' || w.rowSpan < 1) {
+          return c.json({ ok: false, error: `Invalid rowSpan for ${id}: must be >= 1` }, 400);
+        }
+      }
+
       const db = getDb();
 
       const replace = db.transaction(() => {
