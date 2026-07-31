@@ -36,6 +36,15 @@
   let gridWidth = $state(0);
   let breakpoint: 'mobile' | 'tablet' | 'desktop' = $state('desktop');
 
+  let resizeId: string | null = $state(null);
+  let resizeEdge: 'right' | 'bottom' | 'corner' = $state('right');
+  let resizeStartX = $state(0);
+  let resizeStartY = $state(0);
+  let resizeOrigColSpan = $state(0);
+  let resizeOrigRowSpan = $state(0);
+  let resizePreviewColSpan = $state(0);
+  let resizePreviewRowSpan = $state(0);
+
   function computeResponsivePositions(
     widgets: Record<string, WidgetLayout>,
     order: string[],
@@ -151,6 +160,93 @@
     return (e: PointerEvent) => handlePointerDown(e, id);
   }
 
+  function handleResizeStart(e: PointerEvent, id: string, edge: 'right' | 'bottom' | 'corner') {
+    const pos = $layout.widgets[id];
+    if (!pos || !gridEl) return;
+
+    e.stopPropagation();
+    resizeId = id;
+    resizeEdge = edge;
+    resizeStartX = e.clientX;
+    resizeStartY = e.clientY;
+    resizeOrigColSpan = pos.colSpan;
+    resizeOrigRowSpan = pos.rowSpan;
+    resizePreviewColSpan = pos.colSpan;
+    resizePreviewRowSpan = pos.rowSpan;
+    gridWidth = gridEl.getBoundingClientRect().width;
+
+    document.addEventListener('pointermove', handleResizeMove);
+    document.addEventListener('pointerup', handleResizeEnd);
+    document.addEventListener('keydown', handleResizeKeyDown);
+  }
+
+  function handleResizeMove(e: PointerEvent) {
+    if (!resizeId || !gridEl) return;
+
+    const colWidth = gridWidth / GRID_COLS;
+    const dx = e.clientX - resizeStartX;
+    const dy = e.clientY - resizeStartY;
+
+    let newColSpan = resizeOrigColSpan;
+    let newRowSpan = resizeOrigRowSpan;
+
+    if (resizeEdge === 'right' || resizeEdge === 'corner') {
+      newColSpan = Math.max(2, resizeOrigColSpan + Math.round(dx / colWidth));
+    }
+    if (resizeEdge === 'bottom' || resizeEdge === 'corner') {
+      newRowSpan = Math.max(2, resizeOrigRowSpan + Math.round(dy / ROW_HEIGHT));
+    }
+
+    const pos = $layout.widgets[resizeId];
+    if (!pos) return;
+
+    const candidate = { col: pos.col, row: pos.row, colSpan: newColSpan, rowSpan: newRowSpan };
+    const otherWidgets = Object.entries($layout.widgets)
+      .filter(([id]) => id !== resizeId)
+      .map(([, w]) => w);
+
+    if (!otherWidgets.some((w) => {
+      return (
+        candidate.col < w.col + w.colSpan &&
+        candidate.col + candidate.colSpan > w.col &&
+        candidate.row < w.row + w.rowSpan &&
+        candidate.row + candidate.rowSpan > w.row
+      );
+    })) {
+      resizePreviewColSpan = newColSpan;
+      resizePreviewRowSpan = newRowSpan;
+    }
+  }
+
+  function handleResizeEnd() {
+    if (!resizeId) return;
+
+    layoutStore.updatePosition(resizeId, {
+      col: $layout.widgets[resizeId]?.col ?? 0,
+      row: $layout.widgets[resizeId]?.row ?? 0,
+      colSpan: resizePreviewColSpan,
+      rowSpan: resizePreviewRowSpan,
+    });
+
+    resizeId = null;
+    document.removeEventListener('pointermove', handleResizeMove);
+    document.removeEventListener('pointerup', handleResizeEnd);
+    document.removeEventListener('keydown', handleResizeKeyDown);
+  }
+
+  function handleResizeKeyDown(e: KeyboardEvent) {
+    if (e.key === 'Escape' && resizeId) {
+      resizeId = null;
+      document.removeEventListener('pointermove', handleResizeMove);
+      document.removeEventListener('pointerup', handleResizeEnd);
+      document.removeEventListener('keydown', handleResizeKeyDown);
+    }
+  }
+
+  function startResize(id: string) {
+    return (e: PointerEvent, edge: 'right' | 'bottom' | 'corner') => handleResizeStart(e, id, edge);
+  }
+
   onMount(() => {
     themeStore.init();
     initSync();
@@ -204,7 +300,9 @@
             <svelte:component
               this={COMPONENTS[id]}
               isDragging={dragId === id}
+              isResizing={resizeId === id}
               onDragStart={dragId ? undefined : startDrag(id)}
+              onResizeStart={resizeId ? undefined : startResize(id)}
             />
           </div>
         {/if}
@@ -223,6 +321,20 @@
           >
             <svelte:component this={COMPONENTS[dragId]} />
           </div>
+        {/if}
+      {/if}
+
+      {#if resizeId}
+        {@const pos = $layout.widgets[resizeId]}
+        {#if pos}
+          <div
+            class="pointer-events-none absolute z-50 rounded-xl border-2 border-blue-400 opacity-50"
+            style="
+              grid-column: {pos.col + 1} / span {resizePreviewColSpan};
+              grid-row: {pos.row + 1} / span {resizePreviewRowSpan};
+              width: 100%;
+            "
+          ></div>
         {/if}
       {/if}
     </main>

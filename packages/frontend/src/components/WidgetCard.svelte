@@ -14,7 +14,9 @@
     background,
     updatedAt,
     isDragging = false,
+    isResizing = false,
     onDragStart,
+    onResizeStart,
     class: className = '',
   }: {
     title: string;
@@ -27,7 +29,9 @@
     background?: Snippet;
     updatedAt?: string;
     isDragging?: boolean;
-    onDragStart?: () => void;
+    isResizing?: boolean;
+    onDragStart?: (e: PointerEvent) => void;
+    onResizeStart?: (e: PointerEvent, edge: 'right' | 'bottom' | 'corner') => void;
     class?: string;
   } = $props();
 
@@ -42,7 +46,7 @@
   const timeAgo = $derived(updatedAt ? formatTimeAgo(updatedAt) : '');
 </script>
 
-<div class={cn('rounded-xl border border-neutral-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900', isDragging && 'opacity-30', className)}>
+<div class={cn('relative rounded-xl border border-neutral-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900', (isDragging || isResizing) && 'opacity-30', className)}>
   <div
     class="flex items-center justify-between border-b border-neutral-200 px-5 py-3 dark:border-neutral-800"
     class:cursor-grab={onDragStart && !isDragging}
@@ -100,4 +104,27 @@
       {/if}
     {/if}
   </div>
+
+  {#if onResizeStart}
+    <div
+      class="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize transition-colors hover:bg-blue-400"
+      class:bg-blue-400={isResizing}
+      role="separator"
+      aria-orientation="vertical"
+      onpointerdown={(e) => onResizeStart(e, 'right')}
+    ></div>
+    <div
+      class="absolute bottom-0 left-0 right-0 h-1 cursor-row-resize transition-colors hover:bg-blue-400"
+      class:bg-blue-400={isResizing}
+      role="separator"
+      aria-orientation="horizontal"
+      onpointerdown={(e) => onResizeStart(e, 'bottom')}
+    ></div>
+    <div
+      class="absolute bottom-0 right-0 h-3 w-3 cursor-nwse-resize transition-colors hover:bg-blue-400"
+      class:bg-blue-400={isResizing}
+      role="separator"
+      onpointerdown={(e) => onResizeStart(e, 'corner')}
+    ></div>
+  {/if}
 </div>
