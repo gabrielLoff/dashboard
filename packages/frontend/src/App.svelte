@@ -13,7 +13,8 @@
   import { Toaster } from 'svelte-french-toast';
   import { layoutStore, layout } from '$lib/layout-store';
   import { initSync } from '$lib/sync-service';
-  import { snapToGrid, findNearestFreePosition, GRID_COLS, ROW_HEIGHT } from '$lib/grid-engine';
+  import { snapToGrid, findNearestFreePosition, computeMobileOrder, GRID_COLS, ROW_HEIGHT } from '$lib/grid-engine';
+  import type { WidgetLayout } from '$lib/layout-store';
 
   const COMPONENTS: Record<string, any> = {
     weather: WeatherWidget,
@@ -33,6 +34,53 @@
   let offsetX = $state(0);
   let offsetY = $state(0);
   let gridWidth = $state(0);
+  let breakpoint: 'mobile' | 'tablet' | 'desktop' = $state('desktop');
+
+  function computeResponsivePositions(
+    widgets: Record<string, WidgetLayout>,
+    order: string[],
+    bp: 'mobile' | 'tablet' | 'desktop',
+  ): Record<string, { col: number; row: number; colSpan: number; rowSpan: number }> {
+    if (bp === 'desktop') {
+      const result: Record<string, { col: number; row: number; colSpan: number; rowSpan: number }> = {};
+      for (const id of order) {
+        const w = widgets[id];
+        if (w) result[id] = { col: w.col, row: w.row, colSpan: w.colSpan, rowSpan: w.rowSpan };
+      }
+      return result;
+    }
+
+    if (bp === 'mobile') {
+      const sorted = computeMobileOrder(widgets, order);
+      const result: Record<string, { col: number; row: number; colSpan: number; rowSpan: number }> = {};
+      let row = 0;
+      for (const id of sorted) {
+        result[id] = { col: 0, row, colSpan: 1, rowSpan: 1 };
+        row += 1;
+      }
+      return result;
+    }
+
+    const tabletOrder = computeMobileOrder(widgets, order);
+    const result: Record<string, { col: number; row: number; colSpan: number; rowSpan: number }> = {};
+    let row = 0;
+    let col = 0;
+    for (const id of tabletOrder) {
+      const w = widgets[id];
+      const span = w ? Math.min(w.colSpan, 2) : 1;
+      if (col + span > 2) {
+        row += 1;
+        col = 0;
+      }
+      result[id] = { col, row, colSpan: span, rowSpan: 1 };
+      col += span;
+    }
+    return result;
+  }
+
+  let responsivePositions = $derived(
+    computeResponsivePositions($layout.widgets, $layout.order, breakpoint),
+  );
 
   function handlePointerDown(e: PointerEvent, id: string) {
     const pos = $layout.widgets[id];
@@ -106,6 +154,24 @@
   onMount(() => {
     themeStore.init();
     initSync();
+
+    const mqlMobile = window.matchMedia('(max-width: 639px)');
+    const mqlTablet = window.matchMedia('(min-width: 640px) and (max-width: 1023px)');
+
+    function updateBreakpoint() {
+      if (mqlMobile.matches) breakpoint = 'mobile';
+      else if (mqlTablet.matches) breakpoint = 'tablet';
+      else breakpoint = 'desktop';
+    }
+
+    updateBreakpoint();
+    mqlMobile.addEventListener('change', updateBreakpoint);
+    mqlTablet.addEventListener('change', updateBreakpoint);
+
+    return () => {
+      mqlMobile.removeEventListener('change', updateBreakpoint);
+      mqlTablet.removeEventListener('change', updateBreakpoint);
+    };
   });
 </script>
 
@@ -123,17 +189,20 @@
     <main
       bind:this={gridEl}
       class="relative grid gap-3"
-      style="grid-template-columns: repeat(6, 1fr); grid-auto-rows: 60px;"
+      class:grid-cols-1={breakpoint === 'mobile'}
+      class:grid-cols-2={breakpoint === 'tablet'}
+      style={breakpoint === 'desktop' ? 'grid-template-columns: repeat(6, 1fr); grid-auto-rows: 60px;' : 'grid-auto-rows: 60px;'}
     >
       {#each $layout.order as id (id)}
-        {@const pos = $layout.widgets[id]}
+        {@const pos = responsivePositions[id]}
         {#if pos && COMPONENTS[id]}
           <div
-            style="grid-column: {pos.col + 1} / span {pos.colSpan}; grid-row: {pos.row + 1} / span {pos.rowSpan};"
+            style={breakpoint === 'desktop'
+              ? `grid-column: ${pos.col + 1} / span ${pos.colSpan}; grid-row: ${pos.row + 1} / span ${pos.rowSpan};`
+              : ''}
           >
             <svelte:component
               this={COMPONENTS[id]}
-              size="compact"
               isDragging={dragId === id}
               onDragStart={dragId ? undefined : startDrag(id)}
             />
@@ -152,7 +221,7 @@
               width: 100%;
             "
           >
-            <svelte:component this={COMPONENTS[dragId]} size="compact" />
+            <svelte:component this={COMPONENTS[dragId]} />
           </div>
         {/if}
       {/if}
