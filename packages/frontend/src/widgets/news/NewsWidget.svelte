@@ -8,15 +8,10 @@
   import { refreshNews } from '$lib/api-client';
   import { queryClient } from '$lib/query-client';
   import { createRefreshHandler } from '$lib/refresh';
-  import type { WidgetSize } from '$lib/layout-store';
+
 
   let {
-    size = 'compact',
-    onToggleSize,
-  }: {
-    size?: WidgetSize;
-    onToggleSize?: () => void;
-  } = $props();
+  }: {} = $props();
 
   let countryFilter = $state<string>('');
   let categoryFilter = $state<string>('general');
@@ -65,8 +60,7 @@
   error={error}
   onRefresh={handleRefresh}
   updatedAt={updatedAt}
-  {size}
-  {onToggleSize}
+
 >
   {#snippet icon()}
     <Newspaper class="h-4 w-4" />

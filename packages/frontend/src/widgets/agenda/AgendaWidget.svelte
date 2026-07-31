@@ -8,15 +8,10 @@
   import { refreshAgenda } from '$lib/api-client';
   import { createRefreshHandler } from '$lib/refresh';
   import { formatRelativeDate } from '$lib/utils';
-  import type { WidgetSize } from '$lib/layout-store';
+
 
   let {
-    size = 'compact',
-    onToggleSize,
-  }: {
-    size?: WidgetSize;
-    onToggleSize?: () => void;
-  } = $props();
+  }: {} = $props();
 
   const query = useSourceQuery('agenda');
   const data = $derived<ApiResult<AgendaData> | undefined>($query.data);
@@ -39,8 +34,7 @@
   error={error}
   onRefresh={handleRefresh}
   updatedAt={updatedAt}
-  {size}
-  {onToggleSize}
+
 >
   {#snippet icon()}
     <Calendar class="h-4 w-4" />

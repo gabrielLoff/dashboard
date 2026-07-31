@@ -15,7 +15,7 @@
   import { resolveLocation } from '$lib/weather-location';
   import { CloudSun, Thermometer, Droplets, Wind, MapPin } from 'lucide-svelte';
   import WidgetCard from '../../components/WidgetCard.svelte';
-  import type { WidgetSize } from '$lib/layout-store';
+
   import SunAnimation from './animations/SunAnimation.svelte';
   import CloudSunAnimation from './animations/CloudSunAnimation.svelte';
   import CloudAnimation from './animations/CloudAnimation.svelte';
@@ -27,12 +27,7 @@
   import BoltAnimation from './animations/BoltAnimation.svelte';
 
   let {
-    size = 'compact',
-    onToggleSize,
-  }: {
-    size?: WidgetSize;
-    onToggleSize?: () => void;
-  } = $props();
+  }: {} = $props();
 
   const DEFAULT_LOCATION = 'Porto Alegre';
   const locationDeps = { getCurrentPosition, resolveCityName, resolveCityFromIP, loadLocationCache, saveLocationCache };
@@ -115,8 +110,7 @@
   error={error}
   onRefresh={handleRefresh}
   updatedAt={updatedAt}
-  {size}
-  {onToggleSize}
+
 >
   {#snippet background()}
     {#if AnimationComponent}
