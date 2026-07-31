@@ -50,12 +50,6 @@ importers:
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
-      svelte-bricks:
-        specifier: ^0.5.0
-        version: 0.5.0(svelte@5.56.7(@typescript-eslint/types@8.65.0))
-      svelte-dnd-action:
-        specifier: ^0.9.74
-        version: 0.9.74(svelte@5.56.7(@typescript-eslint/types@8.65.0))
       svelte-french-toast:
         specifier: ^1.2.0
         version: 1.2.0(svelte@5.56.7(@typescript-eslint/types@8.65.0))
@@ -1820,11 +1814,6 @@ packages:
     resolution: {integrity: sha512-MpUEN2OodtUzxvKQl72cUF7RQ5EiHsGvSsVG0ia9c5RbWGL2CI4C7EpPS8UTBIplnlzZiNuV56w+FuNxy3ty2Q==}
     engines: {node: '>=10'}
 
-  svelte-bricks@0.5.0:
-    resolution: {integrity: sha512-e/htJ4lifVfFTY5tVTsJ9UjsB5GXJ5BalfJxe3GzmB5x6zQBhMmEb6yYzyw5OoSvNm+6YZexlD8/fUfqe1GUvA==}
-    peerDependencies:
-      svelte: '>=5'
-
   svelte-check@4.7.3:
     resolution: {integrity: sha512-DHdTCGX62R0fCxBEaT+USdASAnoaRBaaNczkRJl0K7o3WyoCeVUbVxo6fKqpOll/B+WMWCsiFK0eFrJSNBKZIg==}
     engines: {node: '>= 18.0.0'}
@@ -1832,11 +1821,6 @@ packages:
     peerDependencies:
       svelte: ^4.0.0 || ^5.0.0-next.0
       typescript: '>=5.0.0'
-
-  svelte-dnd-action@0.9.74:
-    resolution: {integrity: sha512-zn//d8plF73Y05joRdj0g9S7Z8KY5zoTyzjHtnaJMqQP//6U6smHAHi0ArZWi60bxpoOwo+im8gKhK/M7Eq1pQ==}
-    peerDependencies:
-      svelte: '>=3.23.0 || ^5.0.0-next.0'
 
   svelte-eslint-parser@1.8.0:
     resolution: {integrity: sha512-mikR1qwIVy3t5WthUoAXkMwxkXvabZP9FJgdx35Ei7EbGWmctva1Pih16Koeor/bdNNq8NXHlwKGS6NkYTawLg==}
@@ -3514,10 +3498,6 @@ snapshots:
     dependencies:
       has-flag: 4.0.0
 
-  svelte-bricks@0.5.0(svelte@5.56.7(@typescript-eslint/types@8.65.0)):
-    dependencies:
-      svelte: 5.56.7(@typescript-eslint/types@8.65.0)
-
   svelte-check@4.7.3(picomatch@4.0.5)(svelte@5.56.7(@typescript-eslint/types@8.65.0))(typescript@5.9.3):
     dependencies:
       '@jridgewell/trace-mapping': 0.3.31
@@ -3530,10 +3510,6 @@ snapshots:
       typescript: 5.9.3
     transitivePeerDependencies:
       - picomatch
-
-  svelte-dnd-action@0.9.74(svelte@5.56.7(@typescript-eslint/types@8.65.0)):
-    dependencies:
-      svelte: 5.56.7(@typescript-eslint/types@8.65.0)
 
   svelte-eslint-parser@1.8.0(svelte@5.56.7(@typescript-eslint/types@8.65.0)):
     dependencies:

@@ -10,7 +10,16 @@
 
 
   let {
-  }: {} = $props();
+    isDragging = false,
+    isResizing = false,
+    onDragStart,
+    onResizeStart,
+  }: {
+    isDragging?: boolean;
+    isResizing?: boolean;
+    onDragStart?: (e: PointerEvent) => void;
+    onResizeStart?: (e: PointerEvent, edge: 'right' | 'bottom' | 'corner') => void;
+  } = $props();
 
   let typeFilter = $state<string>('all');
   let platformFilter = $state<string>('pc');
@@ -101,7 +110,10 @@
   error={error}
   onRefresh={handleRefresh}
   updatedAt={updatedAt}
-
+  {isDragging}
+  {isResizing}
+  {onDragStart}
+  {onResizeStart}
 >
   {#snippet icon()}
     <Gamepad2 class="h-4 w-4" />

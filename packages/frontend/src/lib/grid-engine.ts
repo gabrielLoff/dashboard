@@ -2,7 +2,7 @@ import type { WidgetLayout } from './layout-store';
 import { WIDGET_IDS } from './layout-store';
 
 export const GRID_COLS = 6;
-export const ROW_HEIGHT = 60;
+export const ROW_HEIGHT = 120;
 export const MIN_COL_SPAN = 2;
 export const MIN_ROW_SPAN = 2;
 

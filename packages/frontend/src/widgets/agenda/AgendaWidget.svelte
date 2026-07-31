@@ -11,7 +11,16 @@
 
 
   let {
-  }: {} = $props();
+    isDragging = false,
+    isResizing = false,
+    onDragStart,
+    onResizeStart,
+  }: {
+    isDragging?: boolean;
+    isResizing?: boolean;
+    onDragStart?: (e: PointerEvent) => void;
+    onResizeStart?: (e: PointerEvent, edge: 'right' | 'bottom' | 'corner') => void;
+  } = $props();
 
   const query = useSourceQuery('agenda');
   const data = $derived<ApiResult<AgendaData> | undefined>($query.data);
@@ -34,7 +43,10 @@
   error={error}
   onRefresh={handleRefresh}
   updatedAt={updatedAt}
-
+  {isDragging}
+  {isResizing}
+  {onDragStart}
+  {onResizeStart}
 >
   {#snippet icon()}
     <Calendar class="h-4 w-4" />

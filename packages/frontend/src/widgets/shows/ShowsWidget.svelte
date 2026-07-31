@@ -11,7 +11,16 @@
 
 
   let {
-  }: {} = $props();
+    isDragging = false,
+    isResizing = false,
+    onDragStart,
+    onResizeStart,
+  }: {
+    isDragging?: boolean;
+    isResizing?: boolean;
+    onDragStart?: (e: PointerEvent) => void;
+    onResizeStart?: (e: PointerEvent, edge: 'right' | 'bottom' | 'corner') => void;
+  } = $props();
 
   let showModal = $state(false);
   let searchInput = $state('');
@@ -87,7 +96,10 @@
   error={error}
   onRefresh={handleRefresh}
   updatedAt={updatedAt}
-
+  {isDragging}
+  {isResizing}
+  {onDragStart}
+  {onResizeStart}
 >
   {#snippet icon()}
     <Tv class="h-4 w-4" />

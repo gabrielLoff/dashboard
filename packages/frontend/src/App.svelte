@@ -92,6 +92,7 @@
   );
 
   function handlePointerDown(e: PointerEvent, id: string) {
+    e.preventDefault();
     const pos = $layout.widgets[id];
     if (!pos || !gridEl) return;
 
@@ -161,6 +162,7 @@
   }
 
   function handleResizeStart(e: PointerEvent, id: string, edge: 'right' | 'bottom' | 'corner') {
+    e.preventDefault();
     const pos = $layout.widgets[id];
     if (!pos || !gridEl) return;
 
@@ -287,18 +289,19 @@
       class="relative grid gap-3"
       class:grid-cols-1={breakpoint === 'mobile'}
       class:grid-cols-2={breakpoint === 'tablet'}
-      style={breakpoint === 'desktop' ? 'grid-template-columns: repeat(6, 1fr); grid-auto-rows: 60px;' : 'grid-auto-rows: 60px;'}
+      style={breakpoint === 'desktop' ? 'grid-template-columns: repeat(6, 1fr); grid-auto-rows: 120px;' : 'grid-auto-rows: 120px;'}
     >
       {#each $layout.order as id (id)}
         {@const pos = responsivePositions[id]}
-        {#if pos && COMPONENTS[id]}
+        {@const WidgetComponent = COMPONENTS[id]}
+        {#if pos && WidgetComponent}
           <div
+            class="h-full"
             style={breakpoint === 'desktop'
               ? `grid-column: ${pos.col + 1} / span ${pos.colSpan}; grid-row: ${pos.row + 1} / span ${pos.rowSpan};`
               : ''}
           >
-            <svelte:component
-              this={COMPONENTS[id]}
+            <WidgetComponent
               isDragging={dragId === id}
               isResizing={resizeId === id}
               onDragStart={dragId ? undefined : startDrag(id)}
@@ -310,7 +313,8 @@
 
       {#if dragId}
         {@const pos = $layout.widgets[dragId]}
-        {#if pos}
+        {@const DragComponent = COMPONENTS[dragId]}
+        {#if pos && DragComponent}
           <div
             class="pointer-events-none absolute z-50 opacity-70"
             style="
@@ -319,7 +323,7 @@
               width: 100%;
             "
           >
-            <svelte:component this={COMPONENTS[dragId]} />
+            <DragComponent />
           </div>
         {/if}
       {/if}

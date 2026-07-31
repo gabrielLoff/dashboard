@@ -27,7 +27,16 @@
   import BoltAnimation from './animations/BoltAnimation.svelte';
 
   let {
-  }: {} = $props();
+    isDragging = false,
+    isResizing = false,
+    onDragStart,
+    onResizeStart,
+  }: {
+    isDragging?: boolean;
+    isResizing?: boolean;
+    onDragStart?: (e: PointerEvent) => void;
+    onResizeStart?: (e: PointerEvent, edge: 'right' | 'bottom' | 'corner') => void;
+  } = $props();
 
   const DEFAULT_LOCATION = 'Porto Alegre';
   const locationDeps = { getCurrentPosition, resolveCityName, resolveCityFromIP, loadLocationCache, saveLocationCache };
@@ -110,7 +119,10 @@
   error={error}
   onRefresh={handleRefresh}
   updatedAt={updatedAt}
-
+  {isDragging}
+  {isResizing}
+  {onDragStart}
+  {onResizeStart}
 >
   {#snippet background()}
     {#if AnimationComponent}

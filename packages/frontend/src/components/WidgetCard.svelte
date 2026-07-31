@@ -46,9 +46,11 @@
   const timeAgo = $derived(updatedAt ? formatTimeAgo(updatedAt) : '');
 </script>
 
-<div class={cn('relative rounded-xl border border-neutral-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900', (isDragging || isResizing) && 'opacity-30', className)}>
+<div class={cn('relative overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900', (isDragging || isResizing) && 'opacity-30', className)}>
   <div
-    class="flex items-center justify-between border-b border-neutral-200 px-5 py-3 dark:border-neutral-800"
+    role="button"
+    tabindex="-1"
+    class="flex items-center justify-between border-b border-neutral-200 px-5 py-3 select-none dark:border-neutral-800"
     class:cursor-grab={onDragStart && !isDragging}
     class:cursor-grabbing={isDragging}
     onpointerdown={onDragStart}
@@ -107,14 +109,14 @@
 
   {#if onResizeStart}
     <div
-      class="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize transition-colors hover:bg-blue-400"
+      class="absolute right-0 top-8 bottom-1 w-1 cursor-col-resize transition-colors hover:bg-blue-400"
       class:bg-blue-400={isResizing}
       role="separator"
       aria-orientation="vertical"
       onpointerdown={(e) => onResizeStart(e, 'right')}
     ></div>
     <div
-      class="absolute bottom-0 left-0 right-0 h-1 cursor-row-resize transition-colors hover:bg-blue-400"
+      class="absolute bottom-0 left-1 right-1 h-1 cursor-row-resize transition-colors hover:bg-blue-400"
       class:bg-blue-400={isResizing}
       role="separator"
       aria-orientation="horizontal"
