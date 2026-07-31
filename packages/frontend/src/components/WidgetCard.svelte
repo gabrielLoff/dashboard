@@ -1,8 +1,7 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
-  import { RefreshCw, AlertCircle, ChevronRight, ChevronDown, GripVertical } from 'lucide-svelte';
+  import { RefreshCw, AlertCircle } from 'lucide-svelte';
   import { cn, formatTimeAgo } from '$lib/utils';
-  import type { WidgetSize } from '$lib/layout-store';
 
   let {
     title,
@@ -14,9 +13,8 @@
     children,
     background,
     updatedAt,
-    size = 'compact',
-    onToggleSize,
-    dragHandle,
+    isDragging = false,
+    onDragStart,
     class: className = '',
   }: {
     title: string;
@@ -28,9 +26,8 @@
     children: Snippet;
     background?: Snippet;
     updatedAt?: string;
-    size?: WidgetSize;
-    onToggleSize?: () => void;
-    dragHandle?: Snippet;
+    isDragging?: boolean;
+    onDragStart?: () => void;
     class?: string;
   } = $props();
 
@@ -43,28 +40,16 @@
   });
 
   const timeAgo = $derived(updatedAt ? formatTimeAgo(updatedAt) : '');
-  const isWide = $derived(size === 'wide');
 </script>
 
-<div class={cn('rounded-xl border border-neutral-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900', className)}>
-  <div class="flex items-center justify-between border-b border-neutral-200 px-5 py-3 dark:border-neutral-800">
+<div class={cn('rounded-xl border border-neutral-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900', isDragging && 'opacity-30', className)}>
+  <div
+    class="flex items-center justify-between border-b border-neutral-200 px-5 py-3 dark:border-neutral-800"
+    class:cursor-grab={onDragStart && !isDragging}
+    class:cursor-grabbing={isDragging}
+    onpointerdown={onDragStart}
+  >
     <div class="flex items-center gap-2">
-      {#if dragHandle}
-        <span class="cursor-grab text-neutral-300 active:cursor-grabbing dark:text-neutral-600">{@render dragHandle()}</span>
-      {/if}
-      {#if onToggleSize}
-        <button
-          onclick={onToggleSize}
-          class="rounded-md p-1 text-neutral-400 transition-colors hover:bg-neutral-100 hover:text-neutral-600 dark:hover:bg-neutral-800 dark:hover:text-neutral-300"
-          title={isWide ? 'Switch to compact' : 'Switch to wide'}
-        >
-          {#if isWide}
-            <ChevronDown class="h-4 w-4" />
-          {:else}
-            <ChevronRight class="h-4 w-4" />
-          {/if}
-        </button>
-      {/if}
       {#if icon}
         <span class="text-neutral-500 dark:text-neutral-400">{@render icon()}</span>
       {/if}
