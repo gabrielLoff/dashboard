@@ -4,13 +4,6 @@
   import { queryClient } from '$lib/query-client';
   import { themeStore } from '$lib/theme.svelte';
   import ThemeToggle from '$components/ThemeToggle.svelte';
-  import WeatherWidget from '$widgets/weather/WeatherWidget.svelte';
-  import NewsWidget from '$widgets/news/NewsWidget.svelte';
-  import AgendaWidget from '$widgets/agenda/AgendaWidget.svelte';
-  import GamesWidget from '$widgets/games/GamesWidget.svelte';
-  import ShowsWidget from '$widgets/shows/ShowsWidget.svelte';
-  import HabitWidget from '$widgets/habits/HabitWidget.svelte';
-  import WidgetLayout from '$components/WidgetLayout.svelte';
   import { Toaster } from 'svelte-french-toast';
   import { layoutStore, layout } from '$lib/layout-store';
   import { initSync } from '$lib/sync-service';
@@ -19,15 +12,8 @@
   import { createResizeController } from '$lib/resize-controller.svelte';
   import { applyGradient } from '$lib/gradient-theme';
   import { computeResponsivePositions } from '$lib/responsive-layout';
-
-  const COMPONENTS: Record<string, any> = {
-    weather: WeatherWidget,
-    news: NewsWidget,
-    agenda: AgendaWidget,
-    games: GamesWidget,
-    shows: ShowsWidget,
-    habits: HabitWidget,
-  };
+  import { COMPONENTS } from '$lib/widget-registry';
+  import WidgetLayout from '$components/WidgetLayout.svelte';
 
   let gridEl: HTMLElement;
   let breakpoint: 'mobile' | 'tablet' | 'desktop' = $state('desktop');

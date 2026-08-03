@@ -1,4 +1,5 @@
 import { writable, derived } from 'svelte/store';
+import { WIDGET_IDS, DEFAULT_WIDGET_LAYOUTS } from './widget-registry';
 
 const STORAGE_KEY = 'dashboard-layout';
 
@@ -12,7 +13,7 @@ export interface WidgetLayout {
 /** @deprecated Use WidgetLayout with col/row/colSpan/rowSpan instead. Will be removed in ticket #3. */
 export type WidgetSize = 'compact' | 'wide';
 
-export const WIDGET_IDS = ['weather', 'news', 'agenda', 'games', 'shows', 'habits'] as const;
+export { WIDGET_IDS };
 export type WidgetId = (typeof WIDGET_IDS)[number];
 
 export interface LayoutState {
@@ -21,15 +22,6 @@ export interface LayoutState {
 }
 
 const DEFAULT_ORDER: string[] = [...WIDGET_IDS];
-
-const DEFAULT_WIDGET_LAYOUTS: Record<string, WidgetLayout> = {
-  weather: { col: 0, row: 0, colSpan: 3, rowSpan: 3 },
-  habits: { col: 3, row: 0, colSpan: 3, rowSpan: 2 },
-  news: { col: 0, row: 3, colSpan: 2, rowSpan: 4 },
-  games: { col: 2, row: 3, colSpan: 3, rowSpan: 4 },
-  agenda: { col: 5, row: 2, colSpan: 1, rowSpan: 5 },
-  shows: { col: 3, row: 5, colSpan: 3, rowSpan: 3 },
-};
 
 const DEFAULT_LAYOUT: LayoutState = {
   widgets: { ...DEFAULT_WIDGET_LAYOUTS },

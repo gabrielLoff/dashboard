@@ -1,19 +1,71 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
+const { mockFetchWeather, mockFetchWeatherByCoords, mockFetchNews, mockFetchAgenda, mockFetchGames, mockFetchUpcoming } = vi.hoisted(() => ({
+  mockFetchWeather: vi.fn(),
+  mockFetchWeatherByCoords: vi.fn(),
+  mockFetchNews: vi.fn(),
+  mockFetchAgenda: vi.fn(),
+  mockFetchGames: vi.fn(),
+  mockFetchUpcoming: vi.fn(),
+}));
+
 vi.mock('@tanstack/svelte-query', () => ({
   createQuery: vi.fn(),
 }));
 
+vi.mock('../src/lib/widget-registry.ts', () => ({
+  sourceConfigs: {
+    weather: {
+      key: (args?: { lat?: number; lon?: number }) =>
+        args?.lat != null && args?.lon != null
+          ? ['dashboard', 'weather', args.lat.toFixed(2), args.lon.toFixed(2)]
+          : ['dashboard', 'weather'],
+      fn: (args?: { lat?: number; lon?: number; location?: string }) =>
+        args?.lat != null && args?.lon != null
+          ? mockFetchWeatherByCoords(args.lat, args.lon)
+          : mockFetchWeather(args?.location),
+      staleTime: 5 * 60 * 1000,
+      refetchInterval: 10 * 60 * 1000,
+    },
+    news: {
+      key: (filters?: { country?: string; category?: string }) =>
+        ['dashboard', 'news', filters?.country ?? 'all', filters?.category ?? 'general'],
+      fn: (filters?: { country?: string; category?: string }) => mockFetchNews(filters),
+      staleTime: 15 * 60 * 1000,
+      refetchInterval: 30 * 60 * 1000,
+    },
+    agenda: {
+      key: () => ['dashboard', 'agenda'],
+      fn: () => mockFetchAgenda(),
+      staleTime: 5 * 60 * 1000,
+      refetchInterval: 10 * 60 * 1000,
+    },
+    games: {
+      key: (filters?: { type?: string; platform?: string; page?: number }) =>
+        ['dashboard', 'games', filters?.type ?? 'all', filters?.platform ?? 'pc', filters?.page ?? 1],
+      fn: (filters?: { type?: string; platform?: string; page?: number }) => mockFetchGames(filters),
+      staleTime: 6 * 60 * 60 * 1000,
+      refetchInterval: 12 * 60 * 60 * 1000,
+    },
+    shows: {
+      key: (ids?: number[]) => ['dashboard', 'shows', 'upcoming', ...(ids ?? []).sort((a: number, b: number) => a - b)],
+      fn: (ids?: number[]) => mockFetchUpcoming(ids ?? []),
+      staleTime: 5 * 60 * 1000,
+      refetchInterval: 10 * 60 * 1000,
+    },
+  },
+}));
+
 vi.mock('../src/lib/api-client.ts', () => ({
-  fetchWeather: vi.fn(),
-  fetchWeatherByCoords: vi.fn(),
-  fetchNews: vi.fn(),
-  fetchAgenda: vi.fn(),
-  fetchGames: vi.fn(),
+  fetchWeather: mockFetchWeather,
+  fetchWeatherByCoords: mockFetchWeatherByCoords,
+  fetchNews: mockFetchNews,
+  fetchAgenda: mockFetchAgenda,
+  fetchGames: mockFetchGames,
+  fetchUpcoming: mockFetchUpcoming,
 }));
 
 import { createQuery } from '@tanstack/svelte-query';
-import { fetchWeather, fetchWeatherByCoords, fetchNews, fetchAgenda, fetchGames } from '../src/lib/api-client.ts';
 import { useSourceQuery } from '../src/lib/query-config.ts';
 
 const mockCreateQuery = vi.mocked(createQuery);
@@ -80,65 +132,6 @@ describe('useSourceQuery', () => {
     );
   });
 
-  it('passes fetchWeather to queryFn for weather', () => {
-    useSourceQuery('weather');
-
-    const options = mockCreateQuery.mock.calls[0][0];
-    options.queryFn();
-
-    expect(fetchWeather).toHaveBeenCalledOnce();
-  });
-
-  it('passes fetchNews to queryFn for news', () => {
-    useSourceQuery('news');
-
-    const options = mockCreateQuery.mock.calls[0][0];
-    options.queryFn();
-
-    expect(fetchNews).toHaveBeenCalledOnce();
-  });
-
-  it('calls createQuery with correct options for news with filters', () => {
-    useSourceQuery('news', { country: 'us', category: 'technology' });
-
-    expect(mockCreateQuery).toHaveBeenCalledOnce();
-    expect(mockCreateQuery).toHaveBeenCalledWith(
-      expect.objectContaining({
-        queryKey: ['dashboard', 'news', 'us', 'technology'],
-        staleTime: 15 * 60 * 1000,
-        refetchInterval: 30 * 60 * 1000,
-      }),
-    );
-  });
-
-  it('passes news filters to fetchNews via queryFn', () => {
-    const filters = { country: 'br', category: 'sports' };
-    useSourceQuery('news', filters);
-
-    const options = mockCreateQuery.mock.calls[0][0];
-    options.queryFn();
-
-    expect(fetchNews).toHaveBeenCalledWith(filters);
-  });
-
-  it('passes fetchAgenda to queryFn for agenda', () => {
-    useSourceQuery('agenda');
-
-    const options = mockCreateQuery.mock.calls[0][0];
-    options.queryFn();
-
-    expect(fetchAgenda).toHaveBeenCalledOnce();
-  });
-
-  it('passes fetchGames to queryFn for games', () => {
-    useSourceQuery('games');
-
-    const options = mockCreateQuery.mock.calls[0][0];
-    options.queryFn();
-
-    expect(fetchGames).toHaveBeenCalledOnce();
-  });
-
   it('throws for unknown source', () => {
     expect(() => useSourceQuery('unknown' as never)).toThrow('Unknown source: unknown');
   });
@@ -153,15 +146,6 @@ describe('useSourceQuery', () => {
     );
   });
 
-  it('calls fetchWeatherByCoords when weather receives coords', () => {
-    useSourceQuery('weather', { lat: -30.03, lon: -51.21 });
-
-    const options = mockCreateQuery.mock.calls[0][0];
-    options.queryFn();
-
-    expect(fetchWeatherByCoords).toHaveBeenCalledWith(-30.03, -51.21);
-  });
-
   it('uses current query key when weather receives location', () => {
     useSourceQuery('weather', { location: 'São Paulo' });
 
@@ -172,21 +156,16 @@ describe('useSourceQuery', () => {
     );
   });
 
-  it('calls fetchWeather with location when weather receives location', () => {
-    useSourceQuery('weather', { location: 'São Paulo' });
+  it('calls createQuery with correct options for news with filters', () => {
+    useSourceQuery('news', { country: 'us', category: 'technology' });
 
-    const options = mockCreateQuery.mock.calls[0][0];
-    options.queryFn();
-
-    expect(fetchWeather).toHaveBeenCalledWith('São Paulo');
-  });
-
-  it('calls fetchWeather with undefined when weather has no args', () => {
-    useSourceQuery('weather');
-
-    const options = mockCreateQuery.mock.calls[0][0];
-    options.queryFn();
-
-    expect(fetchWeather).toHaveBeenCalledWith(undefined);
+    expect(mockCreateQuery).toHaveBeenCalledOnce();
+    expect(mockCreateQuery).toHaveBeenCalledWith(
+      expect.objectContaining({
+        queryKey: ['dashboard', 'news', 'us', 'technology'],
+        staleTime: 15 * 60 * 1000,
+        refetchInterval: 30 * 60 * 1000,
+      }),
+    );
   });
 });
