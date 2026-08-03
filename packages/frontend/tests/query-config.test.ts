@@ -6,13 +6,14 @@ vi.mock('@tanstack/svelte-query', () => ({
 
 vi.mock('../src/lib/api-client.ts', () => ({
   fetchWeather: vi.fn(),
+  fetchWeatherByCoords: vi.fn(),
   fetchNews: vi.fn(),
   fetchAgenda: vi.fn(),
   fetchGames: vi.fn(),
 }));
 
 import { createQuery } from '@tanstack/svelte-query';
-import { fetchWeather, fetchNews, fetchAgenda, fetchGames } from '../src/lib/api-client.ts';
+import { fetchWeather, fetchWeatherByCoords, fetchNews, fetchAgenda, fetchGames } from '../src/lib/api-client.ts';
 import { useSourceQuery } from '../src/lib/query-config.ts';
 
 const mockCreateQuery = vi.mocked(createQuery);
@@ -140,5 +141,52 @@ describe('useSourceQuery', () => {
 
   it('throws for unknown source', () => {
     expect(() => useSourceQuery('unknown' as never)).toThrow('Unknown source: unknown');
+  });
+
+  it('uses byCoords query key when weather receives coords', () => {
+    useSourceQuery('weather', { lat: -30.03, lon: -51.21 });
+
+    expect(mockCreateQuery).toHaveBeenCalledWith(
+      expect.objectContaining({
+        queryKey: ['dashboard', 'weather', '-30.03', '-51.21'],
+      }),
+    );
+  });
+
+  it('calls fetchWeatherByCoords when weather receives coords', () => {
+    useSourceQuery('weather', { lat: -30.03, lon: -51.21 });
+
+    const options = mockCreateQuery.mock.calls[0][0];
+    options.queryFn();
+
+    expect(fetchWeatherByCoords).toHaveBeenCalledWith(-30.03, -51.21);
+  });
+
+  it('uses current query key when weather receives location', () => {
+    useSourceQuery('weather', { location: 'São Paulo' });
+
+    expect(mockCreateQuery).toHaveBeenCalledWith(
+      expect.objectContaining({
+        queryKey: ['dashboard', 'weather'],
+      }),
+    );
+  });
+
+  it('calls fetchWeather with location when weather receives location', () => {
+    useSourceQuery('weather', { location: 'São Paulo' });
+
+    const options = mockCreateQuery.mock.calls[0][0];
+    options.queryFn();
+
+    expect(fetchWeather).toHaveBeenCalledWith('São Paulo');
+  });
+
+  it('calls fetchWeather with undefined when weather has no args', () => {
+    useSourceQuery('weather');
+
+    const options = mockCreateQuery.mock.calls[0][0];
+    options.queryFn();
+
+    expect(fetchWeather).toHaveBeenCalledWith(undefined);
   });
 });

@@ -34,7 +34,6 @@ vi.mock('$lib/query-config', () => ({
       return () => {};
     },
   }),
-  buildWeatherQueryOptions: () => ({}),
 }));
 
 vi.mock('@tanstack/svelte-query', () => ({

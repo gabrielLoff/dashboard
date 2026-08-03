@@ -1,12 +1,10 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { writable, derived } from 'svelte/store';
-  import type { CreateQueryOptions } from '@tanstack/svelte-query';
-  import { createQuery } from '@tanstack/svelte-query';
-  import { queryKeys, isOk } from '@dashboard/shared';
+  import { writable } from 'svelte/store';
+  import { isOk, queryKeys } from '@dashboard/shared';
   import type { ApiResult, WeatherData } from '@dashboard/shared';
   import { refreshWeather, refreshWeatherByCoords } from '$lib/api-client';
-  import { buildWeatherQueryOptions } from '$lib/query-config';
+  import { useSourceQuery, type WeatherArgs } from '$lib/query-config';
   import { queryClient } from '$lib/query-client';
   import { createRefreshHandler } from '$lib/refresh';
   import { getCurrentPosition, type GeolocationCoords } from '$lib/geolocation';
@@ -47,11 +45,10 @@
   let geoDenied = $state(false);
   let displayLocation = $state<string | null>(null);
 
-  const queryOptions = derived(coords, ($coords): CreateQueryOptions<ApiResult<WeatherData>> =>
-    buildWeatherQueryOptions($coords ? { lat: $coords.lat, lon: $coords.lon } : { location: DEFAULT_LOCATION }) as CreateQueryOptions<ApiResult<WeatherData>>,
+  const weatherArgs = $derived<WeatherArgs>(
+    $coords ? { lat: $coords.lat, lon: $coords.lon } : { location: DEFAULT_LOCATION },
   );
-
-  const query = createQuery(queryOptions);
+  const query = $derived(useSourceQuery('weather', weatherArgs));
 
   const ANIMATION_MAP: Record<string, any> = {
     sun: SunAnimation,
@@ -65,7 +62,7 @@
     bolt: BoltAnimation,
   };
 
-  const data = $derived($query.data);
+  const data = $derived<ApiResult<WeatherData> | undefined>($query.data);
   const weatherIcon = $derived(data && isOk(data) ? data.data.icon : '');
   const AnimationComponent = $derived(ANIMATION_MAP[weatherIcon] ?? null);
   const error = $derived(data && !isOk(data) ? data.error : '');

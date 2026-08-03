@@ -12,6 +12,12 @@ import type { GamesFilters, NewsFilters } from './api-client';
 
 export type SourceName = 'weather' | 'news' | 'agenda' | 'games' | 'shows';
 
+export interface WeatherArgs {
+  lat?: number;
+  lon?: number;
+  location?: string;
+}
+
 interface SourceConfig {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   key: (...args: any[]) => readonly unknown[];
@@ -23,8 +29,14 @@ interface SourceConfig {
 
 const sourceConfigs: Record<SourceName, SourceConfig> = {
   weather: {
-    key: () => queryKeys.weather.current(),
-    fn: () => fetchWeather(),
+    key: (args?: WeatherArgs) =>
+      args?.lat != null && args?.lon != null
+        ? queryKeys.weather.byCoords(args.lat, args.lon)
+        : queryKeys.weather.current(),
+    fn: (args?: WeatherArgs) =>
+      args?.lat != null && args?.lon != null
+        ? fetchWeatherByCoords(args.lat, args.lon)
+        : fetchWeather(args?.location),
     staleTime: 5 * 60 * 1000,
     refetchInterval: 10 * 60 * 1000,
   },
@@ -66,36 +78,4 @@ export function useSourceQuery(name: SourceName, ...args: unknown[]) {
     staleTime: config.staleTime,
     refetchInterval: config.refetchInterval,
   });
-}
-
-const WEATHER_TIMING = {
-  staleTime: 5 * 60 * 1000,
-  refetchInterval: 10 * 60 * 1000,
-} as const;
-
-interface WeatherCoordsArgs {
-  lat: number;
-  lon: number;
-}
-
-interface WeatherLocationArgs {
-  location?: string;
-}
-
-export function buildWeatherQueryOptions(
-  args: WeatherCoordsArgs | WeatherLocationArgs = {},
-) {
-  if ('lat' in args && 'lon' in args) {
-    return {
-      queryKey: queryKeys.weather.byCoords(args.lat, args.lon) as unknown as string[],
-      queryFn: () => fetchWeatherByCoords(args.lat, args.lon),
-      ...WEATHER_TIMING,
-    };
-  }
-  const location = 'location' in args ? args.location : undefined;
-  return {
-    queryKey: queryKeys.weather.current() as unknown as string[],
-    queryFn: () => fetchWeather(location),
-    ...WEATHER_TIMING,
-  };
 }
