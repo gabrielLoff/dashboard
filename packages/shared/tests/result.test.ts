@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { ok, err, isOk, isErr, unwrap, type ApiResult } from '../src/result.ts';
+import { ok, err, isOk, isErr, type ApiResult } from '../src/result.ts';
 
 describe('Result type', () => {
   it('wraps success values', () => {
@@ -30,13 +30,5 @@ describe('Result type', () => {
     if (isErr(result)) {
       expect(result.error).toBe('fail');
     }
-  });
-
-  it('unwrap returns data for ok', () => {
-    expect(unwrap(ok(10))).toBe(10);
-  });
-
-  it('unwrap throws for err', () => {
-    expect(() => unwrap(err('boom'))).toThrow('boom');
   });
 });

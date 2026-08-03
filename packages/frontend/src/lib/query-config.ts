@@ -99,7 +99,3 @@ export function buildWeatherQueryOptions(
     ...WEATHER_TIMING,
   };
 }
-
-export function useWeatherQuery(args?: WeatherLocationArgs) {
-  return createQuery(buildWeatherQueryOptions(args));
-}

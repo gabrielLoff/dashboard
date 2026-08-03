@@ -1,4 +1,4 @@
-export { type ApiResult, ok, err, isOk, isErr, unwrap } from './result';
+export { type ApiResult, ok, err, isOk, isErr } from './result';
 export type {
   WeatherData,
   ForecastDay,
@@ -9,7 +9,6 @@ export type {
   AgendaEvent,
   FreeGamesData,
   FreeGame,
-  DashboardData,
   ShowSearchResult,
   UpcomingEpisode,
   SeasonPremiere,
