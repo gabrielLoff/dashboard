@@ -71,6 +71,15 @@ export interface NewsFilters {
   category?: string;
 }
 
+export type GameType = 'game' | 'loot' | 'beta';
+export type GamePlatform = 'pc' | 'steam' | 'epic-games-store' | 'gog' | 'drm-free' | 'itchio';
+
+export interface GamesFilters {
+  type?: GameType;
+  platform?: GamePlatform;
+  page?: number;
+}
+
 export interface ShowSearchResult {
   id: number;
   name: string;

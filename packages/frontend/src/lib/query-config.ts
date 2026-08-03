@@ -8,7 +8,7 @@ import {
   fetchGames,
   fetchUpcoming,
 } from './api-client';
-import type { GamesFilters, NewsFilters } from './api-client';
+import type { GamesFilters, NewsFilters } from '@dashboard/shared';
 
 export type SourceName = 'weather' | 'news' | 'agenda' | 'games' | 'shows';
 

@@ -1,19 +1,10 @@
-import type { ApiResult, FreeGamesData } from '@dashboard/shared';
+import type { ApiResult, FreeGamesData, GamesFilters } from '@dashboard/shared';
 import { err } from '@dashboard/shared';
 
 const BASE_URL = process.env.FREEGAMES_API_URL ?? 'https://www.gamerpower.com/api';
 
 export const VALID_TYPES = ['game', 'loot', 'beta'] as const;
 export const VALID_PLATFORMS = ['pc', 'steam', 'epic-games-store', 'gog', 'drm-free', 'itchio'] as const;
-
-export type GameType = (typeof VALID_TYPES)[number];
-export type GamePlatform = (typeof VALID_PLATFORMS)[number];
-
-export interface GamesFilters {
-  type?: GameType;
-  platform?: GamePlatform;
-  page?: number;
-}
 
 function parseEndDate(raw: string): string {
   if (!raw || raw === 'N/A') return '';

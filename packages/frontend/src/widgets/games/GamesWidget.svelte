@@ -2,9 +2,9 @@
   import { Gamepad2, Clock, ExternalLink, Loader2 } from 'lucide-svelte';
   import WidgetCard from '../../components/WidgetCard.svelte';
   import { useSourceQuery } from '$lib/query-config';
-  import { isOk, queryKeys, type FreeGame } from '@dashboard/shared';
+  import { isOk, queryKeys, type FreeGame, type GamesFilters } from '@dashboard/shared';
   import type { ApiResult, FreeGamesData } from '@dashboard/shared';
-  import { refreshGames, fetchGames, type GamesFilters } from '$lib/api-client';
+  import { refreshGames, fetchGames } from '$lib/api-client';
   import { queryClient } from '$lib/query-client';
   import { createRefreshHandler } from '$lib/refresh';
 
@@ -18,7 +18,10 @@
   let isLoadingMore = $state<boolean>(false);
   let hasMore = $state<boolean>(true);
 
-  const filters = $derived<GamesFilters>({ type: typeFilter, platform: platformFilter });
+  const filters = $derived<GamesFilters>({
+    type: typeFilter === 'all' ? undefined : typeFilter as GamesFilters['type'],
+    platform: platformFilter as GamesFilters['platform'],
+  });
   const query = $derived(useSourceQuery('games', { ...filters, page: 1 }));
   const data = $derived<ApiResult<FreeGamesData> | undefined>($query.data);
   const error = $derived($query.data && !isOk($query.data) ? $query.data.error : '');

@@ -1,6 +1,6 @@
-import type { ApiResult, WeatherData, NewsData, NewsFilters, AgendaData, FreeGamesData, ShowSearchResult, ShowsData } from '@dashboard/shared';
+import type { ApiResult, WeatherData, NewsData, NewsFilters, AgendaData, FreeGamesData, GamesFilters, ShowSearchResult, ShowsData } from '@dashboard/shared';
 
-export type { NewsFilters };
+export type { NewsFilters, GamesFilters };
 
 const BASE = '/api';
 
@@ -57,12 +57,6 @@ export function fetchAgenda(): Promise<ApiResult<AgendaData>> {
 
 export function refreshAgenda(): Promise<ApiResult<AgendaData>> {
   return post<AgendaData>('/agenda/refresh');
-}
-
-export interface GamesFilters {
-  type?: string;
-  platform?: string;
-  page?: number;
 }
 
 function gamesQueryParams(filters?: GamesFilters): string {

@@ -1,6 +1,6 @@
 import { createCachedRoute } from './cached-route.ts';
-import { VALID_TYPES, VALID_PLATFORMS, type GamesFilters } from '../connectors/games.ts';
-import type { ApiResult, FreeGamesData } from '@dashboard/shared';
+import { VALID_TYPES, VALID_PLATFORMS } from '../connectors/games.ts';
+import type { ApiResult, FreeGamesData, GamesFilters } from '@dashboard/shared';
 
 const TTL = Number(process.env.CACHE_TTL_GAMES) * 1000 || 7_200_000;
 
