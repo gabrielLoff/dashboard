@@ -28,7 +28,7 @@ describe('WidgetManifest', () => {
       defaultLayout: { col: 3, row: 0, colSpan: 3, rowSpan: 2 },
     };
 
-    expectTypeOf(manifest.queryKey).toEqualTypeOf<((...args: unknown[]) => readonly unknown[]) | undefined>();
+    expectTypeOf(manifest.queryKey).toEqualTypeOf<((...args: any[]) => readonly unknown[]) | undefined>();
     expectTypeOf(manifest.queryFn).toBeUndefined();
     expectTypeOf(manifest.staleTime).toBeUndefined();
   });
