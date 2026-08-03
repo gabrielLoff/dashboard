@@ -15,6 +15,7 @@
   import { resolveLocation } from '$lib/weather-location';
   import { CloudSun, Thermometer, Droplets, Wind, MapPin } from 'lucide-svelte';
   import WidgetCard from '../../components/WidgetCard.svelte';
+  import { weatherIcon as weatherIconStore } from '$lib/weather-store';
 
   import SunAnimation from './animations/SunAnimation.svelte';
   import CloudSunAnimation from './animations/CloudSunAnimation.svelte';
@@ -69,6 +70,10 @@
   const AnimationComponent = $derived(ANIMATION_MAP[weatherIcon] ?? null);
   const error = $derived(data && !isOk(data) ? data.error : '');
   const updatedAt = $derived(data && isOk(data) ? data.data.updatedAt : undefined);
+
+  $effect(() => {
+    weatherIconStore.set(weatherIcon);
+  });
 
   onMount(async () => {
     const result = await resolveLocation(locationDeps, DEFAULT_LOCATION);
