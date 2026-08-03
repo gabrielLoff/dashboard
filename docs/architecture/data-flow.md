@@ -139,7 +139,7 @@ The consumer pattern in every widget:
 
 ## Parallel loading
 
-All five queries fire simultaneously on page load (habits resolves instantly from localStorage). TanStack Query handles request deduplication, so even if two widgets query the same source, only one request reaches the BFF.
+All six queries fire simultaneously on page load (habits resolves instantly from localStorage). TanStack Query handles request deduplication, so even if two widgets query the same source, only one request reaches the BFF.
 
 ```mermaid
 gantt
@@ -183,4 +183,4 @@ gantt
 
 ## Query configuration
 
-All source query options (staleTime, refetchInterval, queryKey, queryFn) are centralized in `query-config.ts`. The `useSourceQuery(name)` function creates a TanStack Query with the right config. Weather has a separate `buildWeatherQueryOptions()` because it supports both city-name and coordinate-based queries.
+Source query options (staleTime, refetchInterval, queryKey, queryFn) are defined in each widget's `manifest.ts` and collected by `widget-registry.ts`. The `useSourceQuery(name)` function in `query-config.ts` creates a TanStack Query with the right config, importing `sourceConfigs` from the registry. Weather has a special override in `query-config.ts` for coordinate-based queries.

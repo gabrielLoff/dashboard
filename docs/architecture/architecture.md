@@ -2,18 +2,19 @@
 
 ## Overview
 
-Monorepo with four packages sharing a TypeScript type layer. The **frontend** (Svelte 5 + Vite) renders five independent widgets. The **BFF server** (Hono) proxies external APIs, normalizes responses, and caches. The **shared** package defines the type contract between them.
+Monorepo with four packages sharing a TypeScript type layer. The **frontend** (Svelte 5 + Vite) renders six independent widgets. The **BFF server** (Hono) proxies external APIs, normalizes responses, and caches. The **shared** package defines the type contract between them.
 
 ```mermaid
 graph TD
     subgraph Frontend["Frontend (Vite :5173)"]
         direction TB
-        A["App.svelte<br/>CSS Grid + DnD Layout"]
+        A["App.svelte<br/>CSS Grid + Drag/Resize"]
         W1["WeatherWidget"]
         W2["NewsWidget"]
         W3["AgendaWidget"]
         W4["GamesWidget"]
         W5["HabitWidget"]
+        W6["ShowsWidget"]
         TQ["TanStack Query<br/>Cache Layer"]
         API["api-client.ts<br/>fetch wrapper"]
     end
@@ -25,19 +26,22 @@ graph TD
         R2["/api/news"]
         R3["/api/agenda"]
         R4["/api/games"]
+        R5["/api/shows"]
         Cache["TTLCache&lt;T&gt;<br/>per-route TTL"]
         C1["weather connector"]
         C2["news connector"]
         C3["agenda connector"]
         C4["games connector"]
+        C5["shows connector"]
     end
 
     subgraph External["External APIs"]
         E1["Open-Meteo<br/>(weather + geocoding)"]
-        E2["NewsData.org"]
+        E2["CurrentsAPI<br/>(news)"]
         E3["Google Calendar"]
-        E4["FreeToGame"]
-        E5["BigDataCloud<br/>(reverse geocode)"]
+        E4["GamerPower<br/>(free games)"]
+        E5["TVmaze<br/>(shows)"]
+        E6["BigDataCloud<br/>(reverse geocode)"]
     end
 
     A --> W1 --> TQ --> API
@@ -45,6 +49,7 @@ graph TD
     A --> W3 --> TQ --> API
     A --> W4 --> TQ --> API
     A --> W5
+    A --> W6 --> TQ --> API
 
     API -->|"HTTP /api/*"| BFF
 
@@ -52,6 +57,7 @@ graph TD
     R2 --> CR --> Cache --> C2 --> E2
     R3 --> CR --> Cache --> C3 --> E3
     R4 --> CR --> Cache --> C4 --> E4
+    R5 --> CR --> Cache --> C5 --> E5
 ```
 
 ## Package Structure
@@ -75,53 +81,61 @@ dashboard/
 │   │   └── src/
 │   │       ├── index.ts           # App entry, CORS, route mounting, mock gate
 │   │       ├── cache.ts           # TTLCache<T> in-memory with configurable TTL
+│   │       ├── db.ts              # SQLite (better-sqlite3) for sync data
 │   │       ├── mock-data.ts       # Mock fixtures, gated by MOCK=true env
 │   │       ├── lib/
 │   │       │   └── google-auth.ts # OAuth2 token refresh for Google Calendar
-│   │       ├── adapters/          # Fetcher interfaces + mock implementations
-│   │       │   ├── index.ts       # re-exports all fetcher types + mocks
-│   │       │   ├── weather.ts     # WeatherFetcher interface, mockWeatherFetcher
-│   │       │   ├── news.ts
-│   │       │   ├── agenda.ts
-│   │       │   └── games.ts
 │   │       ├── connectors/        # External API adapters (real fetch + normalize)
 │   │       │   ├── weather.ts     # Open-Meteo geocoding + forecast
-│   │       │   ├── news.ts
+│   │       │   ├── news.ts        # CurrentsAPI
 │   │       │   ├── agenda.ts      # Google Calendar with OAuth token
-│   │       │   └── games.ts
+│   │       │   ├── games.ts       # GamerPower giveaways
+│   │       │   └── shows.ts       # TVmaze search + upcoming episodes
 │   │       └── routes/            # Hono route handlers per domain
 │   │           ├── cached-route.ts # createCachedRoute() — shared factory
 │   │           ├── weather.ts
 │   │           ├── news.ts
 │   │           ├── agenda.ts
-│   │           └── games.ts
+│   │           ├── games.ts
+│   │           ├── shows.ts
+│   │           └── sync.ts        # CRUD for habits/watchlist/layout via SQLite
 │   │
 │   └── frontend/            # Svelte 5 + Vite
 │       └── src/
-│           ├── App.svelte           # Root layout, DnD grid, QueryClientProvider
+│           ├── App.svelte           # Root layout, orchestrates drag/resize/gradient/responsive
 │           ├── main.ts              # App mount + global CSS
 │           ├── app.css              # Tailwind v4 + dark variant
 │           ├── lib/
 │           │   ├── api-client.ts    # Centralized HTTP client (GET/POST per route)
 │           │   ├── query-client.ts  # TanStack QueryClient config
-│           │   ├── query-config.ts  # Source config (staleTime, refetchInterval)
+│           │   ├── query-config.ts  # useSourceQuery() — imports from widget-registry
+│           │   ├── widget-registry.ts # Collects all manifests: COMPONENTS, sourceConfigs, WIDGET_IDS, layouts
 │           │   ├── theme.svelte.ts  # Dark/light theme store (Svelte runes)
-│           │   ├── layout-store.ts  # Widget order + size (compact/wide)
-│           │   ├── habit-store.ts   # Client-side habit state (localStorage)
-│   │   ├── utils.ts         # cn() (clsx + tailwind-merge), formatTimeAgo()
+│           │   ├── layout-store.ts  # Widget order + positions, persisted to localStorage
+│           │   ├── habit-store.ts   # Client-side habit state (reducer + localStorage)
+│           │   ├── show-store.ts    # TV show watchlist (localStorage)
+│           │   ├── sync-service.ts  # Pull/push state to BFF (habits, watchlist, layout)
+│           │   ├── drag-controller.svelte.ts    # Drag-and-drop composable
+│           │   ├── resize-controller.svelte.ts  # Edge/corner resize composable
+│           │   ├── gradient-theme.ts            # Weather-aware background gradient
+│           │   ├── responsive-layout.ts         # Mobile/tablet/desktop breakpoint positions
+│           │   ├── grid-engine.ts   # Grid math: snap, collision, bounds
+│           │   ├── utils.ts         # cn() (clsx + tailwind-merge), formatTimeAgo()
 │           │   ├── geolocation.ts   # Browser Geolocation API wrapper
 │           │   ├── location-cache.ts # localStorage cache for coords
 │           │   ├── reverse-geocode.ts # BigDataCloud reverse geocoding
 │           │   └── weather-location.ts # Location resolution chain
 │           ├── components/
-│           │   ├── WidgetCard.svelte  # Widget shell: header, spinner, error, DnD, resize
+│           │   ├── WidgetCard.svelte  # Widget shell: header, spinner, error, refresh
+│           │   ├── WidgetLayout.svelte # Drag + resize handles wrapper
 │           │   └── ThemeToggle.svelte # Dark/light toggle button
 │           └── widgets/
-│               ├── weather/  # WeatherWidget (geolocation + Open-Meteo)
-│               ├── news/     # NewsWidget (filterable)
-│               ├── agenda/   # AgendaWidget (Google Calendar)
-│               ├── games/    # GamesWidget (filterable + paginated)
-│               └── habits/   # HabitWidget (client-side only, localStorage)
+│               ├── weather/  # WeatherWidget + manifest (geolocation + Open-Meteo)
+│               ├── news/     # NewsWidget + manifest (filterable)
+│               ├── agenda/   # AgendaWidget + manifest (Google Calendar)
+│               ├── games/    # GamesWidget + manifest (filterable + paginated)
+│               ├── shows/    # ShowsWidget + manifest (TVmaze search + upcoming)
+│               └── habits/   # HabitWidget + manifest (client-side only, localStorage)
 ```
 
 ## Key Design Decisions
@@ -131,9 +145,10 @@ dashboard/
 | Monorepo | pnpm workspaces | Single install, shared types, single dev command |
 | Types | ApiResult&lt;T&gt; discriminated union | Forces error handling at every level, TypeScript exhaustiveness |
 | BFF cache | `createCachedRoute()` factory + per-route TTL | DRY route creation, each route owns its TTL via env vars |
-| Mock data | `MOCK=true` env gate + adapter interfaces | Connectors are real code; adapters swap mock↔live fetchers |
+| Mock data | `MOCK=true` env gate + mock-data.ts fixtures | Connectors check `isMockMode()` and return hardcoded fixtures |
 | Widget contract | &lt;WidgetCard&gt; wrapper with Snippets | Consistent shell, widgets only render their data |
-| Layout | svelte-dnd-action + layoutStore | User-reorderable grid with compact/wide toggle per widget |
+| Widget registry | `widget-registry.ts` collects all manifests | Adding a widget = one directory with manifest + component |
+| Layout | 6-col CSS Grid + drag/resize controllers | User-repositionable grid with collision avoidance |
 | Habits | Client-side only (localStorage) | No server round-trip needed; reducer pattern for state |
 | Weather location | Geolocation → reverse geocode → IP fallback → default | Progressive enhancement, 7-day cache in localStorage |
 | Theme | Dark/light via CSS class on &lt;html&gt; | Tailwind v4 `dark:` variant, persisted to localStorage |
@@ -187,5 +202,5 @@ Cache keys are scoped by source + params. For weather, the key includes coordina
 | Weather | 5 min | 10 min | 10 min (`CACHE_TTL_WEATHER`) |
 | News | 15 min | 30 min | 30 min (`CACHE_TTL_NEWS`) |
 | Agenda | 5 min | 10 min | 10 min (`CACHE_TTL_AGENDA`) |
-| Games | 60 min | 2 hours | 2 hours (`CACHE_TTL_GAMES`) |
+| Games | 6 hr | 12 hr | 12 hr (`CACHE_TTL_GAMES`) |
 | Habits | — | — | — (client-side only) |

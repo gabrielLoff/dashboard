@@ -52,9 +52,6 @@ interface WidgetCardProps {
   onRefresh: (opts?: { clear?: boolean }) => void;  // Header refresh button; Alt+click passes { clear: true }
   children: Snippet;          // The widget's data content
   updatedAt?: string;         // ISO timestamp, shows "Updated X ago"
-  size?: 'compact' | 'wide';  // Widget width in the grid
-  onToggleSize?: () => void;  // Toggles between compact and wide
-  dragHandle?: Snippet;       // Drag handle for reordering
   class?: string;             // Extra classes for the outer card
 }
 ```
@@ -75,14 +72,9 @@ interface WidgetCardProps {
   error={error}
   onRefresh={handleRefresh}
   updatedAt={updatedAt}
-  {size}
-  {onToggleSize}
 >
   {#snippet icon()}
     <CloudSun class="h-4 w-4" />
-  {/snippet}
-  {#snippet dragHandle()}
-    <GripVertical class="h-4 w-4" />
   {/snippet}
   {#snippet children()}
     {#if data && isOk(data)}
@@ -94,28 +86,34 @@ interface WidgetCardProps {
 
 ## Layout system
 
-Widgets live in a CSS Grid managed by `svelte-dnd-action`. Each widget can be reordered by dragging and toggled between compact (half-width) and wide (full-width).
+Widgets live in a CSS Grid (6 columns on desktop, 2 on tablet, 1 on mobile). Each widget has a `{ col, row, colSpan, rowSpan }` position stored in `layoutStore` and persisted to localStorage. Widgets can be dragged to repositioned and resized via edge/corner handles.
 
 ```mermaid
 flowchart TD
     App["App.svelte"] --> LayoutStore["layoutStore<br/>(localStorage)"]
-    LayoutStore --> Order["order: string[]<br/>default: weather,news,agenda,games,habits"]
-    LayoutStore --> Sizes["widgets: Record<id, size>"]
+    LayoutStore --> Order["order: string[]"]
+    LayoutStore --> Positions["widgets: Record<id, WidgetLayout>"]
 
-    App --> DnD["svelte-dnd-action<br/>drag to reorder"]
-    App --> Grid["CSS Grid<br/>grid-cols-1 lg:grid-cols-2"]
+    App --> DragCtrl["drag-controller<br/>(pointer events + grid snap)"]
+    App --> ResizeCtrl["resize-controller<br/>(edge/corner handles)"]
+    App --> Grid["CSS Grid<br/>6 cols desktop, 2 tablet, 1 mobile"]
 
-    Grid --> W1["weather<br/>compact → 1 col"]
-    Grid --> W2["news<br/>compact → 1 col"]
-    Grid --> W3["agenda<br/>wide → 2 cols"]
-    Grid --> W4["games<br/>compact → 1 col"]
-    Grid --> W5["habits<br/>compact → 1 col"]
+    Grid --> W1["weather 3×3"]
+    Grid --> W2["habits 3×2"]
+    Grid --> W3["news 2×4"]
+    Grid --> W4["games 3×4"]
+    Grid --> W5["agenda 1×5"]
+    Grid --> W6["shows 3×3"]
 ```
 
 ### Key files
 
-- `layout-store.ts` — Svelte store with `toggleSize(id)`, `reorder(newOrder)`, `getSize(id)`, `getOrder()`. Persisted to localStorage.
-- `App.svelte` — Maps `layout.order` to components via `COMPONENTS` record, wraps each in a `<div>` with conditional `lg:col-span-2` for wide widgets.
+- `widget-registry.ts` — collects all widget manifests, exports `COMPONENTS`, `sourceConfigs`, `WIDGET_IDS`, `DEFAULT_WIDGET_LAYOUTS`
+- `layout-store.ts` — Svelte store with `updatePosition(id, pos)`, `reorder(newOrder)`, `getPosition(id)`, `getOrder()`. Persisted to localStorage.
+- `drag-controller.svelte.ts` — composable for drag-and-drop with grid snapping and collision avoidance
+- `resize-controller.svelte.ts` — composable for edge/corner resize with collision checking
+- `responsive-layout.ts` — `computeResponsivePositions()` for mobile/tablet breakpoints
+- `App.svelte` — thin orchestrator that composes the above modules and renders the widget grid
 
 ## Adding a new widget
 
@@ -126,19 +124,26 @@ flowchart TD
 5. Create a route in `packages/server/src/routes/`
 6. Mount the route in `packages/server/src/index.ts`
 7. Add fetch functions in `packages/frontend/src/lib/api-client.ts`
-8. Add source config (staleTime, refetchInterval) in `packages/frontend/src/lib/query-config.ts`
-9. Create `packages/frontend/src/widgets/<name>/` with `<Name>Widget.svelte`
-10. Add to `WIDGET_IDS` array in `packages/frontend/src/lib/layout-store.ts`
-11. Add to `COMPONENTS` map in `packages/frontend/src/App.svelte`
+8. Create `packages/frontend/src/widgets/<name>/` with:
+   - `<Name>Widget.svelte` — the widget component
+   - `manifest.ts` — exports a `WidgetManifest` with id, component, queryKey, queryFn, refreshFn, staleTime, refetchInterval, defaultLayout
+
+The `widget-registry.ts` auto-collects all manifests. No other files need editing.
 
 ### Client-only widgets (no server)
 
-For widgets that don't need server data (like Habits), skip steps 1–7. Instead:
+For widgets that don't need server data (like Habits), skip steps 1–7. The manifest omits `queryKey`/`queryFn`/`refreshFn`/`staleTime`/`refetchInterval`:
 
-1. Create a Svelte store in `packages/frontend/src/lib/` with localStorage persistence
-2. Create the widget component in `packages/frontend/src/widgets/<name>/`
-3. Add to `WIDGET_IDS` and `COMPONENTS`
-4. Pass `isLoading={false}` and `isFetching={false}` to WidgetCard
+```ts
+import type { WidgetManifest } from '@dashboard/shared';
+import HabitWidget from './HabitWidget.svelte';
+
+export const manifest: WidgetManifest = {
+  id: 'habits',
+  component: HabitWidget,
+  defaultLayout: { col: 3, row: 0, colSpan: 3, rowSpan: 2 },
+};
+```
 
 ## Testing per widget
 

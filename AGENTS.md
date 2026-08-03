@@ -183,8 +183,10 @@ All packages use ESLint v9 flat config (`eslint.config.mjs`). The shared config 
 5. Create route in `packages/server/src/routes/`
 6. Register route in `packages/server/src/index.ts`
 7. Add fetch functions in `packages/frontend/src/lib/api-client.ts`
-8. Create `packages/frontend/src/widgets/<name>/` with `*-api.ts` (query hook) and `<Name>Widget.svelte`
-9. Add widget to the grid in `packages/frontend/src/App.svelte`
+8. Create `packages/frontend/src/widgets/<name>/` with:
+   - `<Name>Widget.svelte` — the widget component
+   - `manifest.ts` — exports a `WidgetManifest` with id, component, queryKey, queryFn, refreshFn, staleTime, refetchInterval, defaultLayout
+9. Done — `widget-registry.ts` auto-collects the manifest. No other files need editing.
 
 ## Agent skills
 
