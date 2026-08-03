@@ -71,13 +71,6 @@ export interface NewsFilters {
   category?: string;
 }
 
-export interface DashboardData {
-  weather: WeatherData;
-  news: NewsData;
-  agenda: AgendaData;
-  games: FreeGamesData;
-}
-
 export interface ShowSearchResult {
   id: number;
   name: string;

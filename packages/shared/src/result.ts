@@ -17,8 +17,3 @@ export function isOk<T>(result: ApiResult<T>): result is { ok: true; data: T } {
 export function isErr<T>(result: ApiResult<T>): result is { ok: false; error: string } {
   return !result.ok;
 }
-
-export function unwrap<T>(result: ApiResult<T>): T {
-  if (result.ok) return result.data;
-  throw new Error(result.error);
-}

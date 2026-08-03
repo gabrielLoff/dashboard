@@ -8,8 +8,6 @@ import type {
   ShowsData,
 } from '@dashboard/shared';
 
-const MOCK = process.env.MOCK !== 'false';
-
 const today = new Date();
 const mockWeather: WeatherData = {
   location: 'Porto Alegre',
@@ -176,10 +174,6 @@ export function getMockAgenda(): ApiResult<AgendaData> {
 
 export function getMockGames(): ApiResult<FreeGamesData> {
   return ok({ ...mockGames, updatedAt: new Date().toISOString() });
-}
-
-export function isMockMode(): boolean {
-  return MOCK;
 }
 
 const mockShowSearch: ShowSearchResult[] = [
