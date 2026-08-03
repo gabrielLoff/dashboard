@@ -15,7 +15,8 @@
   import { layoutStore, layout } from '$lib/layout-store';
   import { initSync } from '$lib/sync-service';
   import { weatherIcon } from '$lib/weather-store';
-  import { snapToGrid, findNearestFreePosition, computeMobileOrder, GRID_COLS, ROW_HEIGHT } from '$lib/grid-engine';
+  import { computeMobileOrder, GRID_COLS, ROW_HEIGHT } from '$lib/grid-engine';
+  import { createDragController } from '$lib/drag-controller.svelte';
   import type { WidgetLayout as WidgetLayoutData } from '$lib/layout-store';
 
   const COMPONENTS: Record<string, any> = {
@@ -28,14 +29,6 @@
   };
 
   let gridEl: HTMLElement;
-  let dragId: string | null = $state(null);
-  let ghostCol = $state(0);
-  let ghostRow = $state(0);
-  let ghostColSpan = $state(0);
-  let ghostRowSpan = $state(0);
-  let offsetX = $state(0);
-  let offsetY = $state(0);
-  let gridWidth = $state(0);
   let breakpoint: 'mobile' | 'tablet' | 'desktop' = $state('desktop');
 
   let resizeId: string | null = $state(null);
@@ -46,6 +39,7 @@
   let resizeOrigRowSpan = $state(0);
   let resizePreviewColSpan = $state(0);
   let resizePreviewRowSpan = $state(0);
+  let resizeGridWidth = $state(0);
 
   type GradientColors = { light: [string, string]; dark: [string, string] };
 
@@ -152,75 +146,12 @@
     computeResponsivePositions($layout.widgets, $layout.order, breakpoint),
   );
 
-  function handlePointerDown(e: PointerEvent, id: string) {
-    e.preventDefault();
-    const pos = $layout.widgets[id];
-    if (!pos || !gridEl) return;
-
-    const rect = gridEl.getBoundingClientRect();
-    const colWidth = rect.width / GRID_COLS;
-
-    dragId = id;
-    ghostCol = pos.col;
-    ghostRow = pos.row;
-    ghostColSpan = pos.colSpan;
-    ghostRowSpan = pos.rowSpan;
-    gridWidth = rect.width;
-    offsetX = e.clientX - rect.left - pos.col * colWidth;
-    offsetY = e.clientY - rect.top - pos.row * ROW_HEIGHT;
-
-    document.addEventListener('pointermove', handlePointerMove);
-    document.addEventListener('pointerup', handlePointerUp);
-    document.addEventListener('keydown', handleKeyDown);
-  }
-
-  function handlePointerMove(e: PointerEvent) {
-    if (!dragId || !gridEl) return;
-
-    const rect = gridEl.getBoundingClientRect();
-    const colWidth = gridWidth / GRID_COLS;
-    const rawCol = (e.clientX - rect.left - offsetX) / colWidth;
-    const rawRow = (e.clientY - rect.top - offsetY) / ROW_HEIGHT;
-
-    const snapped = snapToGrid(rawCol, rawRow, ghostColSpan, ghostRowSpan);
-
-    const otherWidgets = Object.entries($layout.widgets)
-      .filter(([id]) => id !== dragId)
-      .map(([, w]) => w);
-
-    const nearest = findNearestFreePosition(snapped, otherWidgets);
-    ghostCol = nearest.col;
-    ghostRow = nearest.row;
-  }
-
-  function handlePointerUp() {
-    if (!dragId) return;
-
-    layoutStore.updatePosition(dragId, {
-      col: ghostCol,
-      row: ghostRow,
-      colSpan: ghostColSpan,
-      rowSpan: ghostRowSpan,
-    });
-
-    dragId = null;
-    document.removeEventListener('pointermove', handlePointerMove);
-    document.removeEventListener('pointerup', handlePointerUp);
-    document.removeEventListener('keydown', handleKeyDown);
-  }
-
-  function handleKeyDown(e: KeyboardEvent) {
-    if (e.key === 'Escape' && dragId) {
-      dragId = null;
-      document.removeEventListener('pointermove', handlePointerMove);
-      document.removeEventListener('pointerup', handlePointerUp);
-      document.removeEventListener('keydown', handleKeyDown);
-    }
-  }
-
-  function startDrag(id: string) {
-    return (e: PointerEvent) => handlePointerDown(e, id);
-  }
+  const drag = createDragController({ getWidgets: () => $layout.widgets }, () => gridEl);
+  let dragId = $derived(drag.state.dragId);
+  let ghostCol = $derived(drag.state.ghostCol);
+  let ghostRow = $derived(drag.state.ghostRow);
+  let ghostColSpan = $derived(drag.state.ghostColSpan);
+  let ghostRowSpan = $derived(drag.state.ghostRowSpan);
 
   function handleResizeStart(e: PointerEvent, id: string, edge: 'right' | 'bottom' | 'corner') {
     e.preventDefault();
@@ -236,7 +167,7 @@
     resizeOrigRowSpan = pos.rowSpan;
     resizePreviewColSpan = pos.colSpan;
     resizePreviewRowSpan = pos.rowSpan;
-    gridWidth = gridEl.getBoundingClientRect().width;
+    resizeGridWidth = gridEl.getBoundingClientRect().width;
 
     document.addEventListener('pointermove', handleResizeMove);
     document.addEventListener('pointerup', handleResizeEnd);
@@ -246,7 +177,7 @@
   function handleResizeMove(e: PointerEvent) {
     if (!resizeId || !gridEl) return;
 
-    const colWidth = gridWidth / GRID_COLS;
+    const colWidth = resizeGridWidth / GRID_COLS;
     const dx = e.clientX - resizeStartX;
     const dy = e.clientY - resizeStartY;
 
@@ -365,7 +296,7 @@
             <WidgetLayout
               isDragging={dragId === id}
               isResizing={resizeId === id}
-              onDragStart={dragId ? undefined : startDrag(id)}
+              onDragStart={dragId ? undefined : drag.startDrag(id)}
               onResizeStart={resizeId ? undefined : startResize(id)}
             >
               <WidgetComponent />
