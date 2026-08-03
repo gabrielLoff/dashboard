@@ -6,46 +6,39 @@
   let {
     title,
     icon,
-    isLoading,
-    isFetching,
+    query,
+    isLoading: isLoadingProp,
+    isFetching: isFetchingProp,
     error,
     onRefresh,
     children,
     background,
     updatedAt,
-    isDragging = false,
-    isResizing = false,
-    onDragStart,
-    onResizeStart,
     class: className = '',
   }: {
     title: string;
     icon?: Snippet;
-    isLoading: boolean;
-    isFetching: boolean;
+    query?: { isLoading: boolean; isFetching: boolean };
+    isLoading?: boolean;
+    isFetching?: boolean;
     error: string;
     onRefresh: (opts?: { clear?: boolean }) => void;
     children: Snippet;
     background?: Snippet;
     updatedAt?: string;
-    isDragging?: boolean;
-    isResizing?: boolean;
-    onDragStart?: (e: PointerEvent) => void;
-    onResizeStart?: (e: PointerEvent, edge: 'right' | 'bottom' | 'corner') => void;
     class?: string;
   } = $props();
 
+  const isLoading = $derived(isLoadingProp ?? query?.isLoading ?? false);
+  const isFetching = $derived(isFetchingProp ?? query?.isFetching ?? false);
   const timeAgo = $derived(updatedAt ? formatTimeAgo(updatedAt) : '');
 </script>
 
-<div class={cn('relative overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900', (isDragging || isResizing) && 'opacity-30', className)}>
+<div class={cn('relative overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900', className)}>
   <div
     role="button"
     tabindex="-1"
     class="flex items-center justify-between border-b border-neutral-200 px-5 py-3 select-none dark:border-neutral-800"
-    class:cursor-grab={onDragStart && !isDragging}
-    class:cursor-grabbing={isDragging}
-    onpointerdown={onDragStart}
   >
     <div class="flex items-center gap-2">
       {#if icon}
@@ -98,27 +91,4 @@
       {/if}
     {/if}
   </div>
-
-  {#if onResizeStart}
-    <div
-      class="absolute right-0 top-8 bottom-1 w-1 cursor-col-resize transition-colors hover:bg-blue-400"
-      class:bg-blue-400={isResizing}
-      role="separator"
-      aria-orientation="vertical"
-      onpointerdown={(e) => onResizeStart(e, 'right')}
-    ></div>
-    <div
-      class="absolute bottom-0 left-1 right-1 h-1 cursor-row-resize transition-colors hover:bg-blue-400"
-      class:bg-blue-400={isResizing}
-      role="separator"
-      aria-orientation="horizontal"
-      onpointerdown={(e) => onResizeStart(e, 'bottom')}
-    ></div>
-    <div
-      class="absolute bottom-0 right-0 h-3 w-3 cursor-nwse-resize transition-colors hover:bg-blue-400"
-      class:bg-blue-400={isResizing}
-      role="separator"
-      onpointerdown={(e) => onResizeStart(e, 'corner')}
-    ></div>
-  {/if}
 </div>

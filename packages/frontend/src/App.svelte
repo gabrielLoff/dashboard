@@ -10,12 +10,13 @@
   import GamesWidget from '$widgets/games/GamesWidget.svelte';
   import ShowsWidget from '$widgets/shows/ShowsWidget.svelte';
   import HabitWidget from '$widgets/habits/HabitWidget.svelte';
+  import WidgetLayout from '$components/WidgetLayout.svelte';
   import { Toaster } from 'svelte-french-toast';
   import { layoutStore, layout } from '$lib/layout-store';
   import { initSync } from '$lib/sync-service';
   import { weatherIcon } from '$lib/weather-store';
   import { snapToGrid, findNearestFreePosition, computeMobileOrder, GRID_COLS, ROW_HEIGHT } from '$lib/grid-engine';
-  import type { WidgetLayout } from '$lib/layout-store';
+  import type { WidgetLayout as WidgetLayoutData } from '$lib/layout-store';
 
   const COMPONENTS: Record<string, any> = {
     weather: WeatherWidget,
@@ -106,7 +107,7 @@
   });
 
   function computeResponsivePositions(
-    widgets: Record<string, WidgetLayout>,
+    widgets: Record<string, WidgetLayoutData>,
     order: string[],
     bp: 'mobile' | 'tablet' | 'desktop',
   ): Record<string, { col: number; row: number; colSpan: number; rowSpan: number }> {
@@ -361,12 +362,14 @@
               ? `grid-column: ${pos.col + 1} / span ${pos.colSpan}; grid-row: ${pos.row + 1} / span ${pos.rowSpan};`
               : ''}
           >
-            <WidgetComponent
+            <WidgetLayout
               isDragging={dragId === id}
               isResizing={resizeId === id}
               onDragStart={dragId ? undefined : startDrag(id)}
               onResizeStart={resizeId ? undefined : startResize(id)}
-            />
+            >
+              <WidgetComponent />
+            </WidgetLayout>
           </div>
         {/if}
       {/each}

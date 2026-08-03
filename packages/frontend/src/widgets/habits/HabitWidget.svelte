@@ -11,17 +11,7 @@
   } from '$lib/habit-store';
 
 
-  let {
-    isDragging = false,
-    isResizing = false,
-    onDragStart,
-    onResizeStart,
-  }: {
-    isDragging?: boolean;
-    isResizing?: boolean;
-    onDragStart?: (e: PointerEvent) => void;
-    onResizeStart?: (e: PointerEvent, edge: 'right' | 'bottom' | 'corner') => void;
-  } = $props();
+  let {} = $props();
 
   const today = $derived(formatDate(new Date()));
   const completedToday = $derived($habits.filter((h) => h.completions[today]).length);
@@ -62,10 +52,6 @@
   error=""
   onRefresh={handleRefresh}
   updatedAt={undefined}
-  {isDragging}
-  {isResizing}
-  {onDragStart}
-  {onResizeStart}
 >
   {#snippet icon()}
     <CheckCircle class="h-4 w-4" />
