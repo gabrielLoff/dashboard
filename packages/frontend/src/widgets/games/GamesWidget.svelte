@@ -34,7 +34,6 @@
   const error = $derived($query.data && !isOk($query.data) ? $query.data.error : '');
   const totalResults = $derived(data && isOk(data) ? data.data.totalResults : 0);
   const updatedAt = $derived(data && isOk(data) ? data.data.updatedAt : undefined);
-  const pageSize = $derived(data && isOk(data) ? data.data.pageSize : 12);
 
   $effect(() => {
     if (data && isOk(data)) {

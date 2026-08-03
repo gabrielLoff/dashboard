@@ -168,7 +168,6 @@
             oninput={(e) => handleSearchInput(e.currentTarget.value)}
             placeholder="Search for a show..."
             class="w-full rounded-lg border border-neutral-200 bg-white py-2 pl-9 pr-3 text-sm dark:border-neutral-700 dark:bg-neutral-800"
-            autofocus
           />
         </div>
 

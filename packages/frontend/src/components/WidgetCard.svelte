@@ -35,14 +35,6 @@
     class?: string;
   } = $props();
 
-  let now = $state(Date.now());
-
-  $effect(() => {
-    if (!updatedAt) return;
-    const interval = setInterval(() => { now = Date.now(); }, 60_000);
-    return () => clearInterval(interval);
-  });
-
   const timeAgo = $derived(updatedAt ? formatTimeAgo(updatedAt) : '');
 </script>
 

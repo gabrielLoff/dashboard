@@ -6,7 +6,6 @@
     habits,
     habitCount,
     calculateStreak,
-    weeklyCompletions,
     getWeekDates,
     formatDate,
   } from '$lib/habit-store';
@@ -78,7 +77,6 @@
       <div class="flex flex-col gap-2">
         {#each $habits as habit (habit.id)}
           {@const streak = calculateStreak(habit.completions, today)}
-          {@const week = weeklyCompletions(habit.completions, today)}
           {@const weekDates = getWeekDates(today)}
           {@const doneToday = habit.completions[today] === true}
           <div class="flex items-center gap-2 rounded-lg border border-neutral-100 p-2 dark:border-neutral-800">

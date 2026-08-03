@@ -13,6 +13,7 @@ export function formatDate(d: Date): string {
 
 export function addDays(dateStr: string, days: number): string {
   const [year, month, day] = dateStr.split('-').map(Number);
+  if (!year || !month || !day) return dateStr;
   const d = new Date(Date.UTC(year, month - 1, day + days));
   return formatDate(d);
 }

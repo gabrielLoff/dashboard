@@ -1,4 +1,4 @@
-export { type ApiResult, ok, err, isOk, isErr, unwrap } from './result.ts';
+export { type ApiResult, ok, err, isOk, isErr, unwrap } from './result';
 export type {
   WeatherData,
   ForecastDay,
@@ -15,7 +15,7 @@ export type {
   SeasonPremiere,
   UpcomingEntry,
   ShowsData,
-} from './api-types.ts';
-export { isUpcomingEpisode, isSeasonPremiere } from './api-types.ts';
-export { queryKeys } from './query-keys.ts';
-export { getWeatherCondition, type WeatherCondition } from './weather-codes.ts';
+} from './api-types';
+export { isUpcomingEpisode, isSeasonPremiere } from './api-types';
+export { queryKeys } from './query-keys';
+export { getWeatherCondition, type WeatherCondition } from './weather-codes';

@@ -5,8 +5,10 @@ import AgendaWidget from '../src/widgets/agenda/AgendaWidget.svelte';
 import { ok } from '@dashboard/shared';
 import type { AgendaData } from '@dashboard/shared';
 
+const BASE_DATE = new Date('2026-07-28T12:00:00');
+
 function makeDate(daysFromNow: number): string {
-  const d = new Date();
+  const d = new Date(BASE_DATE);
   d.setDate(d.getDate() + daysFromNow);
   return d.toISOString().split('T')[0];
 }
