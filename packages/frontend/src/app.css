@@ -24,4 +24,8 @@
 body {
   margin: 0;
   font-family: system-ui, -apple-system, sans-serif;
+  background: linear-gradient(135deg, var(--bg-from, #f3f4f6), var(--bg-to, #e5e7eb));
+  background-attachment: fixed;
+  min-height: 100vh;
+  transition: background 30s ease;
 }
