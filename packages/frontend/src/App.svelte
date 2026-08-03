@@ -15,8 +15,9 @@
   import { layoutStore, layout } from '$lib/layout-store';
   import { initSync } from '$lib/sync-service';
   import { weatherIcon } from '$lib/weather-store';
-  import { computeMobileOrder, GRID_COLS, ROW_HEIGHT } from '$lib/grid-engine';
+  import { computeMobileOrder } from '$lib/grid-engine';
   import { createDragController } from '$lib/drag-controller.svelte';
+  import { createResizeController } from '$lib/resize-controller.svelte';
   import type { WidgetLayout as WidgetLayoutData } from '$lib/layout-store';
 
   const COMPONENTS: Record<string, any> = {
@@ -31,15 +32,18 @@
   let gridEl: HTMLElement;
   let breakpoint: 'mobile' | 'tablet' | 'desktop' = $state('desktop');
 
-  let resizeId: string | null = $state(null);
-  let resizeEdge: 'right' | 'bottom' | 'corner' = $state('right');
-  let resizeStartX = $state(0);
-  let resizeStartY = $state(0);
-  let resizeOrigColSpan = $state(0);
-  let resizeOrigRowSpan = $state(0);
-  let resizePreviewColSpan = $state(0);
-  let resizePreviewRowSpan = $state(0);
-  let resizeGridWidth = $state(0);
+  const drag = createDragController({ getWidgets: () => $layout.widgets }, () => gridEl);
+  let dragId = $derived(drag.state.dragId);
+  let ghostCol = $derived(drag.state.ghostCol);
+  let ghostRow = $derived(drag.state.ghostRow);
+  let ghostColSpan = $derived(drag.state.ghostColSpan);
+  let ghostRowSpan = $derived(drag.state.ghostRowSpan);
+
+  const resizeCtrl = createResizeController({
+    getWidgets: () => $layout.widgets,
+    gridWidthGetter: () => gridEl?.getBoundingClientRect().width ?? 0,
+    updatePosition: (widgetId, position) => layoutStore.updatePosition(widgetId, position),
+  });
 
   type GradientColors = { light: [string, string]; dark: [string, string] };
 
@@ -146,101 +150,6 @@
     computeResponsivePositions($layout.widgets, $layout.order, breakpoint),
   );
 
-  const drag = createDragController({ getWidgets: () => $layout.widgets }, () => gridEl);
-  let dragId = $derived(drag.state.dragId);
-  let ghostCol = $derived(drag.state.ghostCol);
-  let ghostRow = $derived(drag.state.ghostRow);
-  let ghostColSpan = $derived(drag.state.ghostColSpan);
-  let ghostRowSpan = $derived(drag.state.ghostRowSpan);
-
-  function handleResizeStart(e: PointerEvent, id: string, edge: 'right' | 'bottom' | 'corner') {
-    e.preventDefault();
-    const pos = $layout.widgets[id];
-    if (!pos || !gridEl) return;
-
-    e.stopPropagation();
-    resizeId = id;
-    resizeEdge = edge;
-    resizeStartX = e.clientX;
-    resizeStartY = e.clientY;
-    resizeOrigColSpan = pos.colSpan;
-    resizeOrigRowSpan = pos.rowSpan;
-    resizePreviewColSpan = pos.colSpan;
-    resizePreviewRowSpan = pos.rowSpan;
-    resizeGridWidth = gridEl.getBoundingClientRect().width;
-
-    document.addEventListener('pointermove', handleResizeMove);
-    document.addEventListener('pointerup', handleResizeEnd);
-    document.addEventListener('keydown', handleResizeKeyDown);
-  }
-
-  function handleResizeMove(e: PointerEvent) {
-    if (!resizeId || !gridEl) return;
-
-    const colWidth = resizeGridWidth / GRID_COLS;
-    const dx = e.clientX - resizeStartX;
-    const dy = e.clientY - resizeStartY;
-
-    let newColSpan = resizeOrigColSpan;
-    let newRowSpan = resizeOrigRowSpan;
-
-    if (resizeEdge === 'right' || resizeEdge === 'corner') {
-      newColSpan = Math.max(2, resizeOrigColSpan + Math.round(dx / colWidth));
-    }
-    if (resizeEdge === 'bottom' || resizeEdge === 'corner') {
-      newRowSpan = Math.max(2, resizeOrigRowSpan + Math.round(dy / ROW_HEIGHT));
-    }
-
-    const pos = $layout.widgets[resizeId];
-    if (!pos) return;
-
-    const candidate = { col: pos.col, row: pos.row, colSpan: newColSpan, rowSpan: newRowSpan };
-    const otherWidgets = Object.entries($layout.widgets)
-      .filter(([id]) => id !== resizeId)
-      .map(([, w]) => w);
-
-    if (!otherWidgets.some((w) => {
-      return (
-        candidate.col < w.col + w.colSpan &&
-        candidate.col + candidate.colSpan > w.col &&
-        candidate.row < w.row + w.rowSpan &&
-        candidate.row + candidate.rowSpan > w.row
-      );
-    })) {
-      resizePreviewColSpan = newColSpan;
-      resizePreviewRowSpan = newRowSpan;
-    }
-  }
-
-  function handleResizeEnd() {
-    if (!resizeId) return;
-
-    layoutStore.updatePosition(resizeId, {
-      col: $layout.widgets[resizeId]?.col ?? 0,
-      row: $layout.widgets[resizeId]?.row ?? 0,
-      colSpan: resizePreviewColSpan,
-      rowSpan: resizePreviewRowSpan,
-    });
-
-    resizeId = null;
-    document.removeEventListener('pointermove', handleResizeMove);
-    document.removeEventListener('pointerup', handleResizeEnd);
-    document.removeEventListener('keydown', handleResizeKeyDown);
-  }
-
-  function handleResizeKeyDown(e: KeyboardEvent) {
-    if (e.key === 'Escape' && resizeId) {
-      resizeId = null;
-      document.removeEventListener('pointermove', handleResizeMove);
-      document.removeEventListener('pointerup', handleResizeEnd);
-      document.removeEventListener('keydown', handleResizeKeyDown);
-    }
-  }
-
-  function startResize(id: string) {
-    return (e: PointerEvent, edge: 'right' | 'bottom' | 'corner') => handleResizeStart(e, id, edge);
-  }
-
   onMount(() => {
     themeStore.init();
     initSync();
@@ -295,9 +204,9 @@
           >
             <WidgetLayout
               isDragging={dragId === id}
-              isResizing={resizeId === id}
+              isResizing={resizeCtrl.state.resizeId === id}
               onDragStart={dragId ? undefined : drag.startDrag(id)}
-              onResizeStart={resizeId ? undefined : startResize(id)}
+              onResizeStart={resizeCtrl.state.resizeId ? undefined : resizeCtrl.startResize(id)}
             >
               <WidgetComponent />
             </WidgetLayout>
@@ -322,14 +231,14 @@
         {/if}
       {/if}
 
-      {#if resizeId}
-        {@const pos = $layout.widgets[resizeId]}
+      {#if resizeCtrl.state.resizeId}
+        {@const pos = $layout.widgets[resizeCtrl.state.resizeId]}
         {#if pos}
           <div
             class="pointer-events-none absolute z-50 rounded-xl border-2 border-blue-400 opacity-50"
             style="
-              grid-column: {pos.col + 1} / span {resizePreviewColSpan};
-              grid-row: {pos.row + 1} / span {resizePreviewRowSpan};
+              grid-column: {pos.col + 1} / span {resizeCtrl.state.resizePreviewColSpan};
+              grid-row: {pos.row + 1} / span {resizeCtrl.state.resizePreviewRowSpan};
               width: 100%;
             "
           ></div>
