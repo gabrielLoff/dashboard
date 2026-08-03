@@ -1,6 +1,6 @@
 import type { GeolocationCoords } from '$lib/geolocation';
 
-interface LocationCacheEntry {
+export interface LocationCacheEntry {
   type: 'coords' | 'city';
   lat?: number;
   lon?: number;

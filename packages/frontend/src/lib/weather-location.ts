@@ -1,17 +1,6 @@
 import type { GeolocationCoords, GeolocationResult } from './geolocation.ts';
-
-interface CityLocation {
-  city: string;
-  country: string;
-}
-
-interface LocationCacheEntry {
-  type: 'coords' | 'city';
-  lat?: number;
-  lon?: number;
-  city?: string;
-  timestamp: string;
-}
+import type { CityLocation } from './reverse-geocode.ts';
+import type { LocationCacheEntry } from './location-cache.ts';
 
 export interface LocationDeps {
   getCurrentPosition: () => Promise<GeolocationResult>;
