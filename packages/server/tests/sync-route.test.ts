@@ -13,6 +13,7 @@ describe('createSyncRoute', () => {
     db.prepare('DELETE FROM habits').run();
     db.prepare('DELETE FROM watchlist').run();
     db.prepare("DELETE FROM layout WHERE key = 'dashboard'").run();
+    db.prepare('DELETE FROM episode_progress').run();
   });
 
   describe('GET /', () => {
@@ -178,6 +179,99 @@ describe('createSyncRoute', () => {
 
       const rows = db.prepare("SELECT * FROM layout WHERE key = 'dashboard'").all();
       expect(rows).toHaveLength(1);
+    });
+  });
+
+  describe('GET / (progress)', () => {
+    it('returns empty progress when table is empty', async () => {
+      const route = createSyncRoute();
+      const app = createApp(route);
+
+      const res = await app.request('/api/sync');
+      const json = await res.json();
+
+      expect(json.data.progress).toEqual([]);
+    });
+
+    it('returns progress from database', async () => {
+      const db = getDb();
+      db.prepare('INSERT INTO episode_progress (show_id, show_name, season, episode, watched_at) VALUES (?, ?, ?, ?, ?)').run(
+        46562, 'The Last of Us', 3, 5, '2026-07-28T12:00:00.000Z',
+      );
+
+      const route = createSyncRoute();
+      const app = createApp(route);
+
+      const res = await app.request('/api/sync');
+      const json = await res.json();
+
+      expect(json.data.progress).toHaveLength(1);
+      expect(json.data.progress[0].showId).toBe(46562);
+      expect(json.data.progress[0].showName).toBe('The Last of Us');
+      expect(json.data.progress[0].season).toBe(3);
+      expect(json.data.progress[0].episode).toBe(5);
+      expect(json.data.progress[0].watchedAt).toBe('2026-07-28T12:00:00.000Z');
+    });
+  });
+
+  describe('PUT /progress', () => {
+    it('replaces all progress entries', async () => {
+      const route = createSyncRoute();
+      const app = createApp(route);
+
+      await app.request('/api/sync/progress', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          progress: [
+            { showId: 46562, showName: 'The Last of Us', season: 3, episode: 5, watchedAt: '2026-07-28T12:00:00.000Z' },
+            { showId: 690, showName: 'Stranger Things', season: 4, episode: 9, watchedAt: '2026-07-28T10:00:00.000Z' },
+          ],
+        }),
+      });
+
+      const db = getDb();
+      const rows = db.prepare('SELECT * FROM episode_progress').all();
+      expect(rows).toHaveLength(2);
+    });
+
+    it('deletes existing progress before inserting', async () => {
+      const db = getDb();
+      db.prepare('INSERT INTO episode_progress (show_id, show_name, season, episode, watched_at) VALUES (?, ?, ?, ?, ?)').run(
+        169, 'Breaking Bad', 5, 16, '2026-01-01T00:00:00.000Z',
+      );
+
+      const route = createSyncRoute();
+      const app = createApp(route);
+
+      await app.request('/api/sync/progress', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          progress: [
+            { showId: 46562, showName: 'The Last of Us', season: 3, episode: 5, watchedAt: '2026-07-28T12:00:00.000Z' },
+          ],
+        }),
+      });
+
+      const rows = db.prepare('SELECT * FROM episode_progress').all() as { show_id: number }[];
+      expect(rows).toHaveLength(1);
+      expect(rows[0].show_id).toBe(46562);
+    });
+
+    it('handles empty progress array', async () => {
+      const route = createSyncRoute();
+      const app = createApp(route);
+
+      await app.request('/api/sync/progress', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ progress: [] }),
+      });
+
+      const db = getDb();
+      const rows = db.prepare('SELECT * FROM episode_progress').all();
+      expect(rows).toHaveLength(0);
     });
   });
 });
