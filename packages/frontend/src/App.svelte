@@ -54,18 +54,18 @@
 
     {#if breakpoint === 'desktop'}
       <main class="flex h-[calc(100vh-10rem)] gap-3">
-        <div class="flex w-[40%] flex-col gap-3">
+        <div class="flex h-full w-[40%] flex-col gap-3">
           {#each LEFT_WIDGET_IDS as id (id)}
             {@const WidgetComponent = COMPONENTS[id]}
             {#if WidgetComponent}
-              <div class={id === 'weather' ? 'h-[40%]' : 'h-[60%]'}>
+              <div class="min-h-0 flex-1">
                 <WidgetComponent />
               </div>
             {/if}
           {/each}
         </div>
 
-        <div class="w-[60%]">
+        <div class="flex h-full w-[60%] flex-col">
           <Carousel items={CAROUSEL_ITEMS}>
             {#snippet children(id: string)}
               {@const WidgetComponent = COMPONENTS[id]}

@@ -81,7 +81,7 @@
   }
 </script>
 
-<div class={cn('flex flex-col', className)}>
+<div class={cn('flex h-full flex-col', className)}>
   <div class="flex items-center justify-center gap-1 pb-3">
     {#each items as item, i (item.id)}
       {@const IconComponent = item.icon}

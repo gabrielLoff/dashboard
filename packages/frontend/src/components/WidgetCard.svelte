@@ -34,7 +34,7 @@
   const timeAgo = $derived(updatedAt ? formatTimeAgo(updatedAt) : '');
 </script>
 
-<div class={cn('relative overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900', className)}>
+<div class={cn('relative flex h-full flex-col overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900', className)}>
   <div
     role="button"
     tabindex="-1"
@@ -56,7 +56,7 @@
     </button>
   </div>
 
-  <div class="relative p-5">
+  <div class="relative flex-1 overflow-y-auto p-5">
     {#if background}
       <div class="absolute inset-0 overflow-hidden pointer-events-none">
         {@render background()}
