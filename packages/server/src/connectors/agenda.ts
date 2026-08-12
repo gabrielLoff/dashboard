@@ -2,8 +2,6 @@ import type { ApiResult, AgendaData } from '@dashboard/shared';
 import { err } from '@dashboard/shared';
 import { getAccessToken } from '../lib/google-auth.ts';
 
-const REFRESH_TOKEN = process.env.GOOGLE_CALENDAR_REFRESH_TOKEN;
-
 const CALENDAR_URL = 'https://www.googleapis.com/calendar/v3/calendars/primary/events';
 
 interface GoogleEvent {
@@ -17,7 +15,7 @@ interface GoogleEvent {
 }
 
 export async function fetchAgenda(): Promise<ApiResult<AgendaData>> {
-  if (!REFRESH_TOKEN) {
+  if (!process.env.GOOGLE_CALENDAR_REFRESH_TOKEN) {
     return err('Google Calendar not configured: missing refresh token');
   }
 
