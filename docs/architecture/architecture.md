@@ -2,7 +2,9 @@
 
 ## Overview
 
-Monorepo with four packages sharing a TypeScript type layer. The **frontend** (Svelte 5 + Vite) renders six independent widgets. The **BFF server** (Hono) proxies external APIs, normalizes responses, and caches. The **shared** package defines the type contract between them.
+Monorepo with four packages sharing a TypeScript type layer. The **frontend** (Svelte 5 + Vite) renders six independent widgets in a two-column layout. The **BFF server** (Hono) proxies external APIs, normalizes responses, and caches. The **shared** package defines the type contract between them.
+
+> **Visual mockup**: See [dashboard-layout.md](./dashboard-layout.md) for ASCII wireframes and [dashboard-mockup.html](./dashboard-mockup.html) for an interactive HTML mockup.
 
 ```mermaid
 graph TD

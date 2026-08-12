@@ -1,0 +1,74 @@
+project "Dashboard Layout Mockup" {
+  style {
+    density: "comfortable"
+    spacing: "lg"
+    radius: "md"
+    stroke: "normal"
+    font: "base"
+  }
+
+  screen Desktop "Desktop Layout (1024px+)" {
+    layout stack(direction: vertical, gap: lg, padding: xl) {
+      component Topbar title: "Dashboard"
+
+      layout split(direction: horizontal, gap: lg) {
+        panel width: 40% {
+          layout stack(direction: vertical, gap: lg) {
+            layout card(padding: md, gap: md, height: 40%) {
+              component Heading text: "Weather"
+              component Placeholder height: 120
+            }
+            layout card(padding: md, gap: md, height: 60%) {
+              component Heading text: "Agenda"
+              component Placeholder height: 200
+            }
+          }
+        }
+
+        panel width: 60% {
+          layout stack(direction: vertical, gap: md) {
+            layout split(direction: horizontal, gap: sm, justify: center) {
+              component Tab icon: "newspaper" label: "News" active: true
+              component Tab icon: "gamepad" label: "Games"
+              component Tab icon: "tv" label: "Shows"
+              component Tab icon: "check" label: "Habits"
+            }
+            layout card(padding: md, gap: md) {
+              component Heading text: "News"
+              component Placeholder height: 300
+            }
+          }
+        }
+      }
+    }
+  }
+
+  screen Mobile "Mobile Layout (<640px)" {
+    layout stack(direction: vertical, gap: lg, padding: xl) {
+      component Topbar title: "Dashboard"
+
+      layout stack(direction: vertical, gap: lg) {
+        layout card(padding: md, gap: md) {
+          component Heading text: "Weather"
+          component Placeholder height: 100
+        }
+        layout card(padding: md, gap: md) {
+          component Heading text: "Agenda"
+          component Placeholder height: 150
+        }
+        layout stack(direction: vertical, gap: md) {
+          layout split(direction: horizontal, gap: sm, justify: center) {
+            component Tab icon: "newspaper" label: "News" active: true
+            component Tab icon: "gamepad" label: "Games"
+            component Tab icon: "tv" label: "Shows"
+            component Tab icon: "check" label: "Habits"
+          }
+          layout card(padding: md, gap: md) {
+            component Heading text: "News"
+            component Placeholder height: 200
+          }
+        }
+      }
+    }
+  }
+}
