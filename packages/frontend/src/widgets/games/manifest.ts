@@ -6,6 +6,7 @@ import GamesWidget from './GamesWidget.svelte';
 export const manifest: WidgetManifest = {
   id: 'games',
   component: GamesWidget,
+  zone: 'carousel',
   queryKey: (filters?: GamesFilters) => queryKeys.games.list(filters),
   queryFn: (filters?: GamesFilters) => fetchGames(filters),
   refreshFn: (filters?: GamesFilters) => refreshGames(filters),

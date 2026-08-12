@@ -6,6 +6,7 @@ import AgendaWidget from './AgendaWidget.svelte';
 export const manifest: WidgetManifest = {
   id: 'agenda',
   component: AgendaWidget,
+  zone: 'left',
   queryKey: () => queryKeys.agenda.list(),
   queryFn: () => fetchAgenda(),
   refreshFn: () => refreshAgenda(),

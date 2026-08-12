@@ -6,6 +6,7 @@ import WeatherWidget from './WeatherWidget.svelte';
 export const manifest: WidgetManifest = {
   id: 'weather',
   component: WeatherWidget,
+  zone: 'left',
   queryKey: () => queryKeys.weather.current(),
   queryFn: () => fetchWeather(),
   refreshFn: () => refreshWeather(),

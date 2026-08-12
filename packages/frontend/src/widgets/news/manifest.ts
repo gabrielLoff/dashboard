@@ -6,6 +6,7 @@ import NewsWidget from './NewsWidget.svelte';
 export const manifest: WidgetManifest = {
   id: 'news',
   component: NewsWidget,
+  zone: 'carousel',
   queryKey: (filters?: NewsFilters) => queryKeys.news.list(filters),
   queryFn: (filters?: NewsFilters) => fetchNews(filters),
   refreshFn: (filters?: NewsFilters) => refreshNews(filters),

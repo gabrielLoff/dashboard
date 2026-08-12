@@ -6,6 +6,7 @@ import ShowsWidget from './ShowsWidget.svelte';
 export const manifest: WidgetManifest = {
   id: 'shows',
   component: ShowsWidget,
+  zone: 'carousel',
   queryKey: (ids?: number[]) => queryKeys.shows.upcoming(ids ?? []),
   queryFn: (ids?: number[]) => fetchUpcoming(ids ?? []),
   refreshFn: (ids?: number[]) => refreshUpcoming(ids ?? []),

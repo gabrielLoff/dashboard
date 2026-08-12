@@ -21,4 +21,4 @@ export type {
 export { isUpcomingEpisode, isSeasonPremiere } from './api-types';
 export { queryKeys } from './query-keys';
 export { getWeatherCondition, type WeatherCondition } from './weather-codes';
-export type { WidgetManifest } from './widget-manifest';
+export type { WidgetManifest, WidgetZone } from './widget-manifest';
