@@ -17,6 +17,8 @@ export type {
   SeasonPremiere,
   UpcomingEntry,
   ShowsData,
+  EpisodeProgress,
+  EpisodeListEntry,
 } from './api-types';
 export { isUpcomingEpisode, isSeasonPremiere } from './api-types';
 export { queryKeys } from './query-keys';

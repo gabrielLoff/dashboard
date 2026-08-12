@@ -40,5 +40,13 @@ function runMigrations(database: Database.Database): void {
       key TEXT PRIMARY KEY,
       value TEXT NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS episode_progress (
+      show_id INTEGER PRIMARY KEY,
+      show_name TEXT NOT NULL,
+      season INTEGER NOT NULL,
+      episode INTEGER NOT NULL,
+      watched_at TEXT NOT NULL
+    );
   `);
 }

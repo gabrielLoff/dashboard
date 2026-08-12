@@ -28,5 +28,11 @@ export const queryKeys = {
     all: ['dashboard', 'shows'] as const,
     search: (query: string) => [...queryKeys.shows.all, 'search', query] as const,
     upcoming: (ids: number[]) => [...queryKeys.shows.all, 'upcoming', ...ids.sort((a, b) => a - b)] as const,
+    episodes: (showId: number) => [...queryKeys.shows.all, 'episodes', showId] as const,
+  },
+
+  progress: {
+    all: ['dashboard', 'progress'] as const,
+    list: () => [...queryKeys.progress.all] as const,
   },
 } as const;

@@ -126,3 +126,17 @@ export interface ShowsData {
   upcoming: UpcomingEntry[];
   updatedAt: string;
 }
+
+export interface EpisodeProgress {
+  showId: number;
+  showName: string;
+  season: number;
+  episode: number;
+  watchedAt: string;
+}
+
+export interface EpisodeListEntry {
+  season: number;
+  number: number;
+  name: string;
+}

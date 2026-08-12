@@ -20,6 +20,14 @@ interface LayoutRow {
   value: string;
 }
 
+interface ProgressRow {
+  show_id: number;
+  show_name: string;
+  season: number;
+  episode: number;
+  watched_at: string;
+}
+
 export function createSyncRoute(): Hono {
   return new Hono()
     .get('/', (c) => {
@@ -28,6 +36,7 @@ export function createSyncRoute(): Hono {
       const habits = db.prepare('SELECT * FROM habits').all() as HabitRow[];
       const watchlist = db.prepare('SELECT * FROM watchlist').all() as WatchlistRow[];
       const layoutRow = db.prepare("SELECT * FROM layout WHERE key = 'dashboard'").get() as LayoutRow | undefined;
+      const progress = db.prepare('SELECT * FROM episode_progress').all() as ProgressRow[];
 
       return c.json({
         ok: true,
@@ -47,6 +56,13 @@ export function createSyncRoute(): Hono {
           layout: layoutRow
             ? (JSON.parse(layoutRow.value) as { carouselOrder: string[] })
             : { carouselOrder: ['news', 'games', 'shows', 'habits'] },
+          progress: progress.map((p) => ({
+            showId: p.show_id,
+            showName: p.show_name,
+            season: p.season,
+            episode: p.episode,
+            watchedAt: p.watched_at,
+          })),
         },
       });
     })
@@ -95,6 +111,21 @@ export function createSyncRoute(): Hono {
           'dashboard',
           JSON.stringify({ carouselOrder: body.carouselOrder }),
         );
+      });
+      replace();
+
+      return c.json({ ok: true });
+    })
+    .put('/progress', async (c) => {
+      const body = await c.req.json() as { progress: Array<{ showId: number; showName: string; season: number; episode: number; watchedAt: string }> };
+      const db = getDb();
+
+      const replace = db.transaction(() => {
+        db.prepare('DELETE FROM episode_progress').run();
+        const insert = db.prepare('INSERT INTO episode_progress (show_id, show_name, season, episode, watched_at) VALUES (?, ?, ?, ?, ?)');
+        for (const p of body.progress) {
+          insert.run(p.showId, p.showName, p.season, p.episode, p.watchedAt);
+        }
       });
       replace();
 
