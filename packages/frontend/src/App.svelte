@@ -5,54 +5,32 @@
   import { themeStore } from '$lib/theme.svelte';
   import ThemeToggle from '$components/ThemeToggle.svelte';
   import { Toaster } from 'svelte-french-toast';
-  import { layoutStore, layout } from '$lib/layout-store';
   import { initSync } from '$lib/sync-service';
   import { weatherIcon } from '$lib/weather-store';
-  import { createDragController } from '$lib/drag-controller.svelte';
-  import { createResizeController } from '$lib/resize-controller.svelte';
   import { applyGradient } from '$lib/gradient-theme';
-  import { computeResponsivePositions } from '$lib/responsive-layout';
-  import { COMPONENTS } from '$lib/widget-registry';
-  import WidgetLayout from '$components/WidgetLayout.svelte';
+  import { getBreakpoint, type Breakpoint } from '$lib/responsive-layout';
+  import { COMPONENTS, CAROUSEL_ITEMS, LEFT_WIDGET_IDS } from '$lib/widget-registry';
+  import Carousel from '$components/Carousel.svelte';
 
-  let gridEl: HTMLElement;
-  let breakpoint: 'mobile' | 'tablet' | 'desktop' = $state('desktop');
-
-  const drag = createDragController({ getWidgets: () => $layout.widgets }, () => gridEl);
-  let dragId = $derived(drag.state.dragId);
-  let ghostCol = $derived(drag.state.ghostCol);
-  let ghostRow = $derived(drag.state.ghostRow);
-  let ghostColSpan = $derived(drag.state.ghostColSpan);
-  let ghostRowSpan = $derived(drag.state.ghostRowSpan);
-
-  const resizeCtrl = createResizeController({
-    getWidgets: () => $layout.widgets,
-    gridWidthGetter: () => gridEl?.getBoundingClientRect().width ?? 0,
-    updatePosition: (widgetId, position) => layoutStore.updatePosition(widgetId, position),
-  });
+  let breakpoint: Breakpoint = $state('desktop');
 
   $effect(() => {
     applyGradient($weatherIcon, themeStore.current);
   });
 
-  let responsivePositions = $derived(
-    computeResponsivePositions($layout.widgets, $layout.order, breakpoint),
-  );
-
   onMount(() => {
     themeStore.init();
     initSync();
+
+    breakpoint = getBreakpoint();
 
     const mqlMobile = window.matchMedia('(max-width: 639px)');
     const mqlTablet = window.matchMedia('(min-width: 640px) and (max-width: 1023px)');
 
     function updateBreakpoint() {
-      if (mqlMobile.matches) breakpoint = 'mobile';
-      else if (mqlTablet.matches) breakpoint = 'tablet';
-      else breakpoint = 'desktop';
+      breakpoint = getBreakpoint();
     }
 
-    updateBreakpoint();
     mqlMobile.addEventListener('change', updateBreakpoint);
     mqlTablet.addEventListener('change', updateBreakpoint);
 
@@ -74,65 +52,48 @@
       <ThemeToggle />
     </header>
 
-    <main
-      bind:this={gridEl}
-      class="relative grid gap-3"
-      class:grid-cols-1={breakpoint === 'mobile'}
-      class:grid-cols-2={breakpoint === 'tablet'}
-      style={breakpoint === 'desktop' ? 'grid-template-columns: repeat(6, 1fr); grid-auto-rows: 120px;' : 'grid-auto-rows: 120px;'}
-    >
-      {#each $layout.order as id (id)}
-        {@const pos = responsivePositions[id]}
-        {@const WidgetComponent = COMPONENTS[id]}
-        {#if pos && WidgetComponent}
-          <div
-            class="h-full"
-            style={breakpoint === 'desktop'
-              ? `grid-column: ${pos.col + 1} / span ${pos.colSpan}; grid-row: ${pos.row + 1} / span ${pos.rowSpan};`
-              : ''}
-          >
-            <WidgetLayout
-              isDragging={dragId === id}
-              isResizing={resizeCtrl.state.resizeId === id}
-              onDragStart={dragId ? undefined : drag.startDrag(id)}
-              onResizeStart={resizeCtrl.state.resizeId ? undefined : resizeCtrl.startResize(id)}
-            >
+    {#if breakpoint === 'desktop'}
+      <main class="flex h-[calc(100vh-10rem)] gap-3">
+        <div class="flex w-[40%] flex-col gap-3">
+          {#each LEFT_WIDGET_IDS as id (id)}
+            {@const WidgetComponent = COMPONENTS[id]}
+            {#if WidgetComponent}
+              <div class={id === 'weather' ? 'h-[40%]' : 'h-[60%]'}>
+                <WidgetComponent />
+              </div>
+            {/if}
+          {/each}
+        </div>
+
+        <div class="w-[60%]">
+          <Carousel items={CAROUSEL_ITEMS}>
+            {#snippet children(id: string)}
+              {@const WidgetComponent = COMPONENTS[id]}
+              {#if WidgetComponent}
+                <WidgetComponent />
+              {/if}
+            {/snippet}
+          </Carousel>
+        </div>
+      </main>
+    {:else}
+      <main class="flex flex-col gap-3">
+        {#each LEFT_WIDGET_IDS as id (id)}
+          {@const WidgetComponent = COMPONENTS[id]}
+          {#if WidgetComponent}
+            <WidgetComponent />
+          {/if}
+        {/each}
+
+        <Carousel items={CAROUSEL_ITEMS}>
+          {#snippet children(id: string)}
+            {@const WidgetComponent = COMPONENTS[id]}
+            {#if WidgetComponent}
               <WidgetComponent />
-            </WidgetLayout>
-          </div>
-        {/if}
-      {/each}
-
-      {#if dragId}
-        {@const pos = $layout.widgets[dragId]}
-        {@const DragComponent = COMPONENTS[dragId]}
-        {#if pos && DragComponent}
-          <div
-            class="pointer-events-none absolute z-50 opacity-70"
-            style="
-              grid-column: {ghostCol + 1} / span {ghostColSpan};
-              grid-row: {ghostRow + 1} / span {ghostRowSpan};
-              width: 100%;
-            "
-          >
-            <DragComponent />
-          </div>
-        {/if}
-      {/if}
-
-      {#if resizeCtrl.state.resizeId}
-        {@const pos = $layout.widgets[resizeCtrl.state.resizeId]}
-        {#if pos}
-          <div
-            class="pointer-events-none absolute z-50 rounded-xl border-2 border-blue-400 opacity-50"
-            style="
-              grid-column: {pos.col + 1} / span {resizeCtrl.state.resizePreviewColSpan};
-              grid-row: {pos.row + 1} / span {resizeCtrl.state.resizePreviewRowSpan};
-              width: 100%;
-            "
-          ></div>
-        {/if}
-      {/if}
-    </main>
+            {/if}
+          {/snippet}
+        </Carousel>
+      </main>
+    {/if}
   </div>
 </QueryClientProvider>

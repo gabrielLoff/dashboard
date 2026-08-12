@@ -35,8 +35,7 @@ describe('createSyncRoute', () => {
       const res = await app.request('/api/sync');
       const json = await res.json();
 
-      expect(json.data.layout.order).toEqual(['weather', 'news', 'agenda', 'games', 'shows', 'habits']);
-      expect(json.data.layout.widgets).toEqual({});
+      expect(json.data.layout.carouselOrder).toEqual(['news', 'games', 'shows', 'habits']);
     });
 
     it('returns habits from database', async () => {
@@ -142,7 +141,7 @@ describe('createSyncRoute', () => {
   });
 
   describe('PUT /layout', () => {
-    it('stores layout as JSON', async () => {
+    it('stores carousel order as JSON', async () => {
       const route = createSyncRoute();
       const app = createApp(route);
 
@@ -150,22 +149,20 @@ describe('createSyncRoute', () => {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          order: ['weather', 'habits'],
-          widgets: { weather: { col: 0, row: 0, colSpan: 6, rowSpan: 3 } },
+          carouselOrder: ['habits', 'news', 'games', 'shows'],
         }),
       });
 
       const db = getDb();
       const row = db.prepare("SELECT * FROM layout WHERE key = 'dashboard'").get() as { value: string };
       const parsed = JSON.parse(row.value);
-      expect(parsed.order).toEqual(['weather', 'habits']);
-      expect(parsed.widgets.weather).toEqual({ col: 0, row: 0, colSpan: 6, rowSpan: 3 });
+      expect(parsed.carouselOrder).toEqual(['habits', 'news', 'games', 'shows']);
     });
 
     it('replaces existing layout', async () => {
       const db = getDb();
       db.prepare("INSERT INTO layout (key, value) VALUES (?, ?)").run(
-        'dashboard', JSON.stringify({ order: ['old'], widgets: {} }),
+        'dashboard', JSON.stringify({ carouselOrder: ['old'] }),
       );
 
       const route = createSyncRoute();
@@ -175,8 +172,7 @@ describe('createSyncRoute', () => {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          order: ['new'],
-          widgets: {},
+          carouselOrder: ['new'],
         }),
       });
 

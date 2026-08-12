@@ -19,8 +19,7 @@ const mockSyncData: SyncData = {
     { id: 101, name: 'Breaking Bad', addedAt: '2026-07-28T10:00:00Z' },
   ],
   layout: {
-    order: ['weather', 'news', 'agenda', 'games', 'shows', 'habits'],
-    widgets: { weather: { size: 'wide' } },
+    carouselOrder: ['news', 'games', 'shows', 'habits'],
   },
 };
 
@@ -111,23 +110,23 @@ describe('pushLayout', () => {
     vi.restoreAllMocks();
   });
 
-  it('sends layout to server', async () => {
+  it('sends carousel order to server', async () => {
     const fetchSpy = vi.fn().mockResolvedValue({ ok: true });
     vi.stubGlobal('fetch', fetchSpy);
 
-    const { order, widgets } = mockSyncData.layout;
-    await pushLayout(order, widgets);
+    const { carouselOrder } = mockSyncData.layout;
+    await pushLayout(carouselOrder);
 
     expect(fetchSpy).toHaveBeenCalledWith('/api/sync/layout', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ order, widgets }),
+      body: JSON.stringify({ carouselOrder }),
     });
   });
 
   it('throws on non-ok response', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 500 }));
-    await expect(pushLayout([], {})).rejects.toThrow('pushLayout failed: 500');
+    await expect(pushLayout([])).rejects.toThrow('pushLayout failed: 500');
   });
 });
 
@@ -188,6 +187,6 @@ describe('pushLayoutSafe', () => {
     const fetchSpy = vi.fn().mockResolvedValue({ ok: false, status: 500 });
     vi.stubGlobal('fetch', fetchSpy);
 
-    expect(() => pushLayoutSafe(mockSyncData.layout.order, mockSyncData.layout.widgets)).not.toThrow();
+    expect(() => pushLayoutSafe(mockSyncData.layout.carouselOrder)).not.toThrow();
   });
 });

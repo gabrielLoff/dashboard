@@ -1,18 +1,18 @@
 import type { Habit } from './habit-store';
 import type { WatchlistEntry } from './show-store';
-import type { LayoutState, WidgetLayout } from './layout-store';
 import type { ApiResult } from '@dashboard/shared';
 import { get } from 'svelte/store';
 import { habitStore } from './habit-store';
 import { showStore } from './show-store';
-import { layoutStore, WIDGET_IDS } from './layout-store';
+import { layoutStore } from './layout-store';
+import { CAROUSEL_WIDGET_IDS } from './widget-registry';
 
 const BASE = '/api';
 
 export interface SyncData {
   habits: Habit[];
   watchlist: WatchlistEntry[];
-  layout: LayoutState;
+  layout: { carouselOrder: string[] };
 }
 
 type QueuedPush = () => Promise<void>;
@@ -48,11 +48,11 @@ export async function pushWatchlist(entries: WatchlistEntry[]): Promise<void> {
   if (!res.ok) throw new Error(`pushWatchlist failed: ${res.status}`);
 }
 
-export async function pushLayout(order: string[], widgets: Record<string, WidgetLayout>): Promise<void> {
+export async function pushLayout(carouselOrder: string[]): Promise<void> {
   const res = await fetch(`${BASE}/sync/layout`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ order, widgets }),
+    body: JSON.stringify({ carouselOrder }),
   });
   if (!res.ok) throw new Error(`pushLayout failed: ${res.status}`);
 }
@@ -97,22 +97,12 @@ export async function initSync(): Promise<SyncData | null> {
       showStore.addShow(entry.id, entry.name, entry.image);
     }
 
-    const serverOrder = serverData.layout.order;
-    const missing = WIDGET_IDS.filter((id) => !serverOrder.includes(id));
+    const serverOrder = serverData.layout.carouselOrder;
+    const missing = CAROUSEL_WIDGET_IDS.filter((id) => !serverOrder.includes(id));
     const mergedOrder = [...serverOrder, ...missing];
 
     layoutStore.reset();
     layoutStore.reorder(mergedOrder);
-    for (const [id, widgetLayout] of Object.entries(serverData.layout.widgets)) {
-      if ('size' in widgetLayout) {
-        const isWide = (widgetLayout as { size: string }).size === 'wide';
-        layoutStore.updatePosition(id, isWide
-          ? { col: 0, row: 0, colSpan: 6, rowSpan: 2 }
-          : { col: 0, row: 0, colSpan: 2, rowSpan: 2 });
-      } else {
-        layoutStore.updatePosition(id, widgetLayout as WidgetLayout);
-      }
-    }
 
     setupSyncSubscriptions();
     return serverData;
@@ -142,7 +132,7 @@ function setupSyncSubscriptions(): void {
 
   layoutStore.subscribe((state) => {
     if (skipInitial) return;
-    pushLayoutSafe(state.order, state.widgets);
+    pushLayoutSafe(state.carouselOrder);
   });
 
   skipInitial = false;
@@ -160,9 +150,9 @@ export function pushWatchlistSafe(entries: WatchlistEntry[]): void {
   });
 }
 
-export function pushLayoutSafe(order: string[], widgets: Record<string, WidgetLayout>): void {
-  pushLayout(order, widgets).catch(() => {
+export function pushLayoutSafe(carouselOrder: string[]): void {
+  pushLayout(carouselOrder).catch(() => {
     const state = get(layoutStore);
-    queuePush(() => pushLayout(state.order, state.widgets));
+    queuePush(() => pushLayout(state.carouselOrder));
   });
 }

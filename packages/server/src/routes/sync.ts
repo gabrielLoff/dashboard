@@ -45,8 +45,8 @@ export function createSyncRoute(): Hono {
             addedAt: w.added_at,
           })),
           layout: layoutRow
-            ? (JSON.parse(layoutRow.value) as { order: string[]; widgets: Record<string, { col: number; row: number; colSpan: number; rowSpan: number }> })
-            : { order: ['weather', 'news', 'agenda', 'games', 'shows', 'habits'], widgets: {} },
+            ? (JSON.parse(layoutRow.value) as { carouselOrder: string[] })
+            : { carouselOrder: ['news', 'games', 'shows', 'habits'] },
         },
       });
     })
@@ -81,21 +81,10 @@ export function createSyncRoute(): Hono {
       return c.json({ ok: true });
     })
     .put('/layout', async (c) => {
-      const body = await c.req.json() as { order: string[]; widgets: Record<string, { col: number; row: number; colSpan: number; rowSpan: number }> };
+      const body = await c.req.json() as { carouselOrder: string[] };
 
-      for (const [id, w] of Object.entries(body.widgets)) {
-        if (typeof w.col !== 'number' || w.col < 0 || w.col > 5) {
-          return c.json({ ok: false, error: `Invalid col for ${id}: must be 0-5` }, 400);
-        }
-        if (typeof w.row !== 'number' || w.row < 0) {
-          return c.json({ ok: false, error: `Invalid row for ${id}: must be >= 0` }, 400);
-        }
-        if (typeof w.colSpan !== 'number' || w.colSpan < 1 || w.colSpan > 6) {
-          return c.json({ ok: false, error: `Invalid colSpan for ${id}: must be 1-6` }, 400);
-        }
-        if (typeof w.rowSpan !== 'number' || w.rowSpan < 1) {
-          return c.json({ ok: false, error: `Invalid rowSpan for ${id}: must be >= 1` }, 400);
-        }
+      if (!Array.isArray(body.carouselOrder)) {
+        return c.json({ ok: false, error: 'carouselOrder must be an array' }, 400);
       }
 
       const db = getDb();
@@ -104,7 +93,7 @@ export function createSyncRoute(): Hono {
         db.prepare("DELETE FROM layout WHERE key = 'dashboard'").run();
         db.prepare('INSERT INTO layout (key, value) VALUES (?, ?)').run(
           'dashboard',
-          JSON.stringify({ order: body.order, widgets: body.widgets }),
+          JSON.stringify({ carouselOrder: body.carouselOrder }),
         );
       });
       replace();
