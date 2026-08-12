@@ -1,29 +1,22 @@
 <script lang="ts">
   import { Calendar, Clock, MapPin } from 'lucide-svelte';
   import WidgetCard from '../../components/WidgetCard.svelte';
-  import { useSourceQuery } from '$lib/query-config';
-  import { isOk, type AgendaEvent, queryKeys } from '@dashboard/shared';
+  import { manifest } from './manifest';
+  import { createWidgetQuery, createWidgetRefresh } from '$lib/widget-query';
+  import { isOk, type AgendaEvent } from '@dashboard/shared';
   import type { ApiResult, AgendaData } from '@dashboard/shared';
-  import { queryClient } from '$lib/query-client';
-  import { refreshAgenda } from '$lib/api-client';
-  import { createRefreshHandler } from '$lib/refresh';
   import { formatRelativeDate } from '$lib/utils';
 
 
   let {} = $props();
 
-  const query = useSourceQuery('agenda');
+  const query = createWidgetQuery(manifest);
   const data = $derived<ApiResult<AgendaData> | undefined>($query.data);
   const error = $derived($query.data && !isOk($query.data) ? $query.data.error : '');
   const events = $derived<AgendaEvent[]>(data && isOk(data) ? data.data.events : []);
   const updatedAt = $derived(data && isOk(data) ? data.data.updatedAt : undefined);
 
-  const handleRefresh = createRefreshHandler(
-    queryClient,
-    () => refreshAgenda(),
-    () => queryKeys.agenda.list(),
-    () => $query.refetch(),
-  );
+  const handleRefresh = createWidgetRefresh(manifest, () => $query.refetch());
 </script>
 
 <WidgetCard

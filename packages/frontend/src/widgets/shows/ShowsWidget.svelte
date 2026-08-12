@@ -1,12 +1,11 @@
 <script lang="ts">
   import { Tv, Plus, X, Check, Search, Loader2 } from 'lucide-svelte';
   import WidgetCard from '../../components/WidgetCard.svelte';
-  import { useSourceQuery } from '$lib/query-config';
-  import { isOk, isUpcomingEpisode, type UpcomingEntry, type ShowSearchResult, queryKeys } from '@dashboard/shared';
+  import { manifest } from './manifest';
+  import { createWidgetQuery, createWidgetRefresh } from '$lib/widget-query';
+  import { isOk, isUpcomingEpisode, type UpcomingEntry, type ShowSearchResult } from '@dashboard/shared';
   import type { ApiResult, ShowsData } from '@dashboard/shared';
-  import { queryClient } from '$lib/query-client';
-  import { searchShows, refreshUpcoming } from '$lib/api-client';
-  import { createRefreshHandler } from '$lib/refresh';
+  import { searchShows } from '$lib/api-client';
   import { showStore, watchlistIds } from '$lib/show-store';
 
 
@@ -18,18 +17,13 @@
   let isSearching = $state(false);
   let debounceTimer = $state<ReturnType<typeof setTimeout>>();
 
-  const query = useSourceQuery('shows', $watchlistIds);
+  const query = $derived(createWidgetQuery(manifest, $watchlistIds));
   const data = $derived<ApiResult<ShowsData> | undefined>($query.data);
   const error = $derived($query.data && !isOk($query.data) ? $query.data.error : '');
   const upcoming = $derived<UpcomingEntry[]>(data && isOk(data) ? data.data.upcoming : []);
   const updatedAt = $derived(data && isOk(data) ? data.data.updatedAt : undefined);
 
-  const handleRefresh = createRefreshHandler(
-    queryClient,
-    () => refreshUpcoming($watchlistIds),
-    () => queryKeys.shows.upcoming($watchlistIds),
-    () => $query.refetch(),
-  );
+  const handleRefresh = createWidgetRefresh(manifest, () => $query.refetch(), () => [$watchlistIds]);
 
   function handleSearchInput(value: string) {
     searchInput = value;

@@ -1,13 +1,10 @@
 <script lang="ts">
   import { Newspaper, ExternalLink } from 'lucide-svelte';
   import WidgetCard from '../../components/WidgetCard.svelte';
-  import { useSourceQuery } from '$lib/query-config';
+  import { manifest } from './manifest';
+  import { createWidgetQuery, createWidgetRefresh } from '$lib/widget-query';
   import { isOk, type NewsItem } from '@dashboard/shared';
   import type { ApiResult, NewsData, NewsFilters } from '@dashboard/shared';
-  import { queryKeys } from '@dashboard/shared';
-  import { refreshNews } from '$lib/api-client';
-  import { queryClient } from '$lib/query-client';
-  import { createRefreshHandler } from '$lib/refresh';
 
 
   let {} = $props();
@@ -20,7 +17,7 @@
     country: countryFilter || undefined,
     category: categoryFilter || undefined,
   });
-  const query = $derived(useSourceQuery('news', filters));
+  const query = $derived(createWidgetQuery(manifest, filters));
   const data = $derived<ApiResult<NewsData> | undefined>($query.data);
   const error = $derived($query.data && !isOk($query.data) ? $query.data.error : '');
   const items = $derived<NewsItem[]>(data && isOk(data) ? data.data.items : []);
@@ -44,12 +41,7 @@
     { value: 'technology', label: 'Technology' },
   ];
 
-  const handleRefresh = createRefreshHandler(
-    queryClient,
-    () => refreshNews(filters),
-    () => queryKeys.news.list(filters),
-    () => $query.refetch(),
-  );
+  const handleRefresh = createWidgetRefresh(manifest, () => $query.refetch(), () => [filters]);
 </script>
 
 <WidgetCard

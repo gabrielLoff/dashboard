@@ -1,12 +1,11 @@
 <script lang="ts">
   import { Gamepad2, Clock, ExternalLink, Loader2 } from 'lucide-svelte';
   import WidgetCard from '../../components/WidgetCard.svelte';
-  import { useSourceQuery } from '$lib/query-config';
-  import { isOk, queryKeys, type FreeGame, type GamesFilters } from '@dashboard/shared';
+  import { manifest } from './manifest';
+  import { createWidgetQuery, createWidgetRefresh } from '$lib/widget-query';
+  import { isOk, type FreeGame, type GamesFilters } from '@dashboard/shared';
   import type { ApiResult, FreeGamesData } from '@dashboard/shared';
-  import { refreshGames, fetchGames } from '$lib/api-client';
-  import { queryClient } from '$lib/query-client';
-  import { createRefreshHandler } from '$lib/refresh';
+  import { fetchGames } from '$lib/api-client';
 
 
   let {} = $props();
@@ -22,7 +21,7 @@
     type: typeFilter === 'all' ? undefined : typeFilter as GamesFilters['type'],
     platform: platformFilter as GamesFilters['platform'],
   });
-  const query = $derived(useSourceQuery('games', { ...filters, page: 1 }));
+  const query = $derived(createWidgetQuery(manifest, { ...filters, page: 1 }));
   const data = $derived<ApiResult<FreeGamesData> | undefined>($query.data);
   const error = $derived($query.data && !isOk($query.data) ? $query.data.error : '');
   const totalResults = $derived(data && isOk(data) ? data.data.totalResults : 0);
@@ -76,12 +75,7 @@
     }
   }
 
-  const handleRefresh = createRefreshHandler(
-    queryClient,
-    () => refreshGames(filters),
-    () => queryKeys.games.list(filters),
-    () => $query.refetch(),
-  );
+  const handleRefresh = createWidgetRefresh(manifest, () => $query.refetch(), () => [filters]);
 
   function daysUntil(dateStr: string): string {
     if (!dateStr) return '';

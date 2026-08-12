@@ -46,13 +46,14 @@ const mockAgendaData: AgendaData = {
   updatedAt: '2026-07-28T12:00:00Z',
 };
 
-vi.mock('$lib/query-config', () => ({
-  useSourceQuery: () => ({
+vi.mock('$lib/widget-query', () => ({
+  createWidgetQuery: () => ({
     subscribe: (fn: (val: unknown) => void) => {
       fn({ data: ok(mockAgendaData), isLoading: false, isFetching: false });
       return () => {};
     },
   }),
+  createWidgetRefresh: () => vi.fn(),
 }));
 
 vi.mock('$lib/api-client', () => ({

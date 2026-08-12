@@ -1,12 +1,10 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { writable } from 'svelte/store';
-  import { isOk, queryKeys } from '@dashboard/shared';
+  import { isOk } from '@dashboard/shared';
   import type { ApiResult, WeatherData } from '@dashboard/shared';
-  import { refreshWeather, refreshWeatherByCoords } from '$lib/api-client';
-  import { useSourceQuery, type WeatherArgs } from '$lib/query-config';
-  import { queryClient } from '$lib/query-client';
-  import { createRefreshHandler } from '$lib/refresh';
+  import { manifest, type WeatherArgs } from './manifest';
+  import { createWidgetQuery, createWidgetRefresh } from '$lib/widget-query';
   import { getCurrentPosition, type GeolocationCoords } from '$lib/geolocation';
   import { loadLocationCache, saveLocationCache } from '$lib/location-cache';
   import { resolveCityName, resolveCityFromIP } from '$lib/reverse-geocode';
@@ -38,7 +36,7 @@
   const weatherArgs = $derived<WeatherArgs>(
     $coords ? { lat: $coords.lat, lon: $coords.lon } : { location: DEFAULT_LOCATION },
   );
-  const query = $derived(useSourceQuery('weather', weatherArgs));
+  const query = $derived(createWidgetQuery(manifest, weatherArgs));
 
   const ANIMATION_MAP: Record<string, any> = {
     sun: SunAnimation,
@@ -80,16 +78,7 @@
     }
   }
 
-  const handleRefresh = createRefreshHandler(
-    queryClient,
-    () => $coords
-      ? refreshWeatherByCoords($coords.lat, $coords.lon)
-      : refreshWeather(DEFAULT_LOCATION),
-    () => $coords
-      ? queryKeys.weather.byCoords($coords.lat, $coords.lon)
-      : queryKeys.weather.current(),
-    () => $query.refetch(),
-  );
+  const handleRefresh = createWidgetRefresh(manifest, () => $query.refetch(), () => [weatherArgs]);
 
   function formatDayName(dateStr: string): string {
     const date = new Date(dateStr + 'T00:00:00');

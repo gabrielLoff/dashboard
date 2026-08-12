@@ -8,8 +8,8 @@ vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({
   removeEventListener: vi.fn(),
 }));
 
-vi.mock('$lib/query-config', () => ({
-  useSourceQuery: () => ({
+vi.mock('$lib/widget-query', () => ({
+  createWidgetQuery: () => ({
     subscribe: (fn: (val: unknown) => void) => {
       fn({
         data: {
@@ -47,6 +47,7 @@ vi.mock('$lib/query-config', () => ({
       return () => {};
     },
   }),
+  createWidgetRefresh: () => vi.fn(),
 }));
 
 vi.mock('$lib/api-client', () => ({
