@@ -312,3 +312,65 @@ describe('getUpcomingEpisodes', () => {
     }
   });
 });
+
+describe('fetchEpisodes', () => {
+  it('hits TVmaze episodes endpoint', async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve([]),
+    });
+
+    const { fetchEpisodes } = await import('../src/connectors/shows.ts');
+    await fetchEpisodes(169);
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining('api.tvmaze.com/shows/169/episodes'),
+    );
+  });
+
+  it('returns normalized episode list', async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve([
+        { id: 1, name: 'Pilot', season: 1, number: 1, airdate: '2008-01-20', airtime: '22:00', runtime: 60 },
+        { id: 2, name: 'Cats in the Bag', season: 1, number: 2, airdate: '2008-01-27', airtime: '22:00', runtime: 60 },
+        { id: 3, name: '...And the Bag\'s in the River', season: 2, number: 1, airdate: '2009-02-15', airtime: '22:00', runtime: 60 },
+      ]),
+    });
+
+    const { fetchEpisodes } = await import('../src/connectors/shows.ts');
+    const result = await fetchEpisodes(169);
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.data).toHaveLength(3);
+      expect(result.data[0]).toEqual({ season: 1, number: 1, name: 'Pilot' });
+      expect(result.data[2]).toEqual({ season: 2, number: 1, name: '...And the Bag\'s in the River' });
+    }
+  });
+
+  it('returns error on non-ok response', async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: false,
+      status: 404,
+      statusText: 'Not Found',
+    });
+
+    const { fetchEpisodes } = await import('../src/connectors/shows.ts');
+    const result = await fetchEpisodes(999999);
+
+    expect(result.ok).toBe(false);
+  });
+
+  it('returns error on network failure', async () => {
+    mockFetch.mockRejectedValue(new Error('Network error'));
+
+    const { fetchEpisodes } = await import('../src/connectors/shows.ts');
+    const result = await fetchEpisodes(169);
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error).toBe('Network error');
+    }
+  });
+});

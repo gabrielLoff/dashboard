@@ -57,7 +57,7 @@ describe('createShowsRoute', () => {
 
   describe('GET /search', () => {
     it('calls searchShows with query param', async () => {
-      const route = createShowsRoute(searchShows, getUpcoming);
+      const route = createShowsRoute(searchShows, getUpcoming, vi.fn().mockResolvedValue(ok([])));
       const app = createApp(route);
 
       await app.request('/api/shows/search?q=breaking');
@@ -66,7 +66,7 @@ describe('createShowsRoute', () => {
     });
 
     it('returns search results', async () => {
-      const route = createShowsRoute(searchShows, getUpcoming);
+      const route = createShowsRoute(searchShows, getUpcoming, vi.fn().mockResolvedValue(ok([])));
       const app = createApp(route);
 
       const res = await app.request('/api/shows/search?q=girls');
@@ -77,7 +77,7 @@ describe('createShowsRoute', () => {
     });
 
     it('handles empty query', async () => {
-      const route = createShowsRoute(searchShows, getUpcoming);
+      const route = createShowsRoute(searchShows, getUpcoming, vi.fn().mockResolvedValue(ok([])));
       const app = createApp(route);
 
       await app.request('/api/shows/search');
@@ -86,7 +86,7 @@ describe('createShowsRoute', () => {
     });
 
     it('does not cache search results', async () => {
-      const route = createShowsRoute(searchShows, getUpcoming);
+      const route = createShowsRoute(searchShows, getUpcoming, vi.fn().mockResolvedValue(ok([])));
       const app = createApp(route);
 
       await app.request('/api/shows/search?q=girls');
@@ -98,7 +98,7 @@ describe('createShowsRoute', () => {
 
   describe('GET /upcoming', () => {
     it('parses comma-separated ids', async () => {
-      const route = createShowsRoute(searchShows, getUpcoming);
+      const route = createShowsRoute(searchShows, getUpcoming, vi.fn().mockResolvedValue(ok([])));
       const app = createApp(route);
 
       await app.request('/api/shows/upcoming?ids=46562,169');
@@ -107,7 +107,7 @@ describe('createShowsRoute', () => {
     });
 
     it('returns upcoming episodes', async () => {
-      const route = createShowsRoute(searchShows, getUpcoming);
+      const route = createShowsRoute(searchShows, getUpcoming, vi.fn().mockResolvedValue(ok([])));
       const app = createApp(route);
 
       const res = await app.request('/api/shows/upcoming?ids=46562');
@@ -118,7 +118,7 @@ describe('createShowsRoute', () => {
     });
 
     it('returns empty array for empty ids', async () => {
-      const route = createShowsRoute(searchShows, getUpcoming);
+      const route = createShowsRoute(searchShows, getUpcoming, vi.fn().mockResolvedValue(ok([])));
       const app = createApp(route);
 
       const res = await app.request('/api/shows/upcoming');
@@ -129,7 +129,7 @@ describe('createShowsRoute', () => {
     });
 
     it('filters out non-numeric ids', async () => {
-      const route = createShowsRoute(searchShows, getUpcoming);
+      const route = createShowsRoute(searchShows, getUpcoming, vi.fn().mockResolvedValue(ok([])));
       const app = createApp(route);
 
       await app.request('/api/shows/upcoming?ids=abc,46562,xyz');
@@ -138,7 +138,7 @@ describe('createShowsRoute', () => {
     });
 
     it('sorts ids for cache key consistency', async () => {
-      const route = createShowsRoute(searchShows, getUpcoming);
+      const route = createShowsRoute(searchShows, getUpcoming, vi.fn().mockResolvedValue(ok([])));
       const app = createApp(route);
 
       await app.request('/api/shows/upcoming?ids=46562,169');
@@ -148,7 +148,7 @@ describe('createShowsRoute', () => {
     });
 
     it('caches results by sorted ids', async () => {
-      const route = createShowsRoute(searchShows, getUpcoming);
+      const route = createShowsRoute(searchShows, getUpcoming, vi.fn().mockResolvedValue(ok([])));
       const app = createApp(route);
 
       await app.request('/api/shows/upcoming?ids=46562');
@@ -177,7 +177,7 @@ describe('createShowsRoute', () => {
         .mockResolvedValueOnce(ok(mockUpcoming))
         .mockResolvedValueOnce(ok(freshData));
 
-      const route = createShowsRoute(searchShows, getUpcoming);
+      const route = createShowsRoute(searchShows, getUpcoming, vi.fn().mockResolvedValue(ok([])));
       const app = createApp(route);
 
       await app.request('/api/shows/upcoming?ids=46562');
@@ -189,6 +189,70 @@ describe('createShowsRoute', () => {
       const getJson = await getRes.json();
       expect(getJson.data.upcoming[0].number).toBe(2);
       expect(getUpcoming).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe('GET /episodes', () => {
+    it('calls fetchEpisodes with show id', async () => {
+      const fetchEpisodes = vi.fn().mockResolvedValue(ok([]));
+      const route = createShowsRoute(searchShows, getUpcoming, fetchEpisodes);
+      const app = createApp(route);
+
+      await app.request('/api/shows/episodes?id=169');
+
+      expect(fetchEpisodes).toHaveBeenCalledWith(169);
+    });
+
+    it('returns episode list', async () => {
+      const mockEpisodes = [
+        { season: 1, number: 1, name: 'Pilot' },
+        { season: 1, number: 2, name: 'Cats in the Bag' },
+      ];
+      const fetchEpisodes = vi.fn().mockResolvedValue(ok(mockEpisodes));
+      const route = createShowsRoute(searchShows, getUpcoming, fetchEpisodes);
+      const app = createApp(route);
+
+      const res = await app.request('/api/shows/episodes?id=169');
+      const json = await res.json();
+
+      expect(json.ok).toBe(true);
+      expect(json.data).toHaveLength(2);
+    });
+
+    it('returns 400 for missing id', async () => {
+      const fetchEpisodes = vi.fn();
+      const route = createShowsRoute(searchShows, getUpcoming, fetchEpisodes);
+      const app = createApp(route);
+
+      const res = await app.request('/api/shows/episodes');
+      const json = await res.json();
+
+      expect(json.ok).toBe(false);
+      expect(res.status).toBe(400);
+    });
+
+    it('returns 400 for invalid id', async () => {
+      const fetchEpisodes = vi.fn();
+      const route = createShowsRoute(searchShows, getUpcoming, fetchEpisodes);
+      const app = createApp(route);
+
+      const res = await app.request('/api/shows/episodes?id=abc');
+      const json = await res.json();
+
+      expect(json.ok).toBe(false);
+      expect(res.status).toBe(400);
+    });
+
+    it('returns 400 for zero id', async () => {
+      const fetchEpisodes = vi.fn();
+      const route = createShowsRoute(searchShows, getUpcoming, fetchEpisodes);
+      const app = createApp(route);
+
+      const res = await app.request('/api/shows/episodes?id=0');
+      const json = await res.json();
+
+      expect(json.ok).toBe(false);
+      expect(res.status).toBe(400);
     });
   });
 });

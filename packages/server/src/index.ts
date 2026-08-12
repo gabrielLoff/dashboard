@@ -13,10 +13,10 @@ import { fetchNews, type NewsFilters } from './connectors/news.ts';
 import { fetchAgenda } from './connectors/agenda.ts';
 import { fetchGames } from './connectors/games.ts';
 import type { GamesFilters } from '@dashboard/shared';
-import { searchShows, getUpcomingEpisodes } from './connectors/shows.ts';
+import { searchShows, getUpcomingEpisodes, fetchEpisodes } from './connectors/shows.ts';
 import { getMockWeather, getMockNews, getMockAgenda, getMockGames, getMockShows, getMockShowsUpcoming } from './mock-data.ts';
 import { getAccessToken } from './lib/google-auth.ts';
-import type { ApiResult, WeatherData, NewsData, AgendaData, FreeGamesData, ShowSearchResult, ShowsData } from '@dashboard/shared';
+import type { ApiResult, WeatherData, NewsData, AgendaData, FreeGamesData, ShowSearchResult, ShowsData, EpisodeListEntry } from '@dashboard/shared';
 
 type CalendarStatus = 'connected' | 'missing-refresh-token';
 
@@ -57,12 +57,15 @@ const searchShows_ = mockMode
 const getUpcomingEpisodes_ = mockMode
   ? ((ids: number[]) => Promise.resolve(getMockShowsUpcoming())) as (ids: number[]) => Promise<ApiResult<ShowsData>>
   : getUpcomingEpisodes;
+const fetchEpisodes_ = mockMode
+  ? ((_id: number) => Promise.resolve({ ok: true, data: [] } as ApiResult<EpisodeListEntry[]>))
+  : fetchEpisodes;
 
 const weatherRoute = createWeatherRoute(fetchWeather_, fetchWeatherByCoords_);
 const newsRoute = createNewsRoute(fetchNews_);
 const agendaRoute = createAgendaRoute(fetchAgenda_);
 const gamesRoute = createGamesRoute(fetchGames_);
-const showsRoute = createShowsRoute(searchShows_, getUpcomingEpisodes_);
+const showsRoute = createShowsRoute(searchShows_, getUpcomingEpisodes_, fetchEpisodes_);
 const syncRoute = createSyncRoute();
 
 app.route('/api/weather', weatherRoute);

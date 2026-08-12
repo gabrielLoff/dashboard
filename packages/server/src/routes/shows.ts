@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { createCachedRoute } from './cached-route.ts';
-import type { ApiResult, ShowSearchResult, ShowsData } from '@dashboard/shared';
+import type { ApiResult, ShowSearchResult, ShowsData, EpisodeListEntry } from '@dashboard/shared';
 
 const UPCOMING_TTL = Number(process.env.CACHE_TTL_SHOWS) * 1000 || 300_000;
 
@@ -33,6 +33,7 @@ function upcomingFetchFn(
 export function createShowsRoute(
   searchShows_: (query: string) => Promise<ApiResult<ShowSearchResult[]>>,
   getUpcoming_: (ids: number[]) => Promise<ApiResult<ShowsData>>,
+  fetchEpisodes_: (showId: number) => Promise<ApiResult<EpisodeListEntry[]>>,
 ) {
   const upcomingRoute = createCachedRoute(
     (ctx) => upcomingFetchFn(ctx, getUpcoming_),
@@ -44,6 +45,15 @@ export function createShowsRoute(
     .get('/search', async (c) => {
       const q = c.req.query('q') ?? '';
       const result = await searchShows_(q);
+      return c.json(result);
+    })
+    .get('/episodes', async (c) => {
+      const id = c.req.query('id');
+      const showId = id ? Number(id) : NaN;
+      if (isNaN(showId) || showId <= 0) {
+        return c.json({ ok: false, error: 'Invalid show id' }, 400);
+      }
+      const result = await fetchEpisodes_(showId);
       return c.json(result);
     })
     .route('/upcoming', upcomingRoute);

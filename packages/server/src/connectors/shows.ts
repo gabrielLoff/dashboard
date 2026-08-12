@@ -1,4 +1,4 @@
-import type { ApiResult, ShowSearchResult, UpcomingEpisode, SeasonPremiere, UpcomingEntry, ShowsData } from '@dashboard/shared';
+import type { ApiResult, ShowSearchResult, UpcomingEpisode, SeasonPremiere, UpcomingEntry, ShowsData, EpisodeListEntry } from '@dashboard/shared';
 import { err } from '@dashboard/shared';
 
 const BASE_URL = 'https://api.tvmaze.com';
@@ -176,4 +176,20 @@ export async function getUpcomingEpisodes(ids: number[]): Promise<ApiResult<Show
 
 function isUpcomingEpisodeEntry(entry: UpcomingEntry): entry is UpcomingEpisode {
   return 'number' in entry;
+}
+
+export async function fetchEpisodes(showId: number): Promise<ApiResult<EpisodeListEntry[]>> {
+  const result = await fetchJson<TvMazeEpisode[]>(
+    `${BASE_URL}/shows/${showId}/episodes`,
+  );
+
+  if (!result.ok) return result;
+
+  const episodes = result.data.map((ep) => ({
+    season: ep.season,
+    number: ep.number,
+    name: ep.name,
+  }));
+
+  return { ok: true, data: episodes };
 }

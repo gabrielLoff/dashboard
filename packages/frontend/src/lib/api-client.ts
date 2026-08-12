@@ -1,4 +1,4 @@
-import type { ApiResult, WeatherData, NewsData, NewsFilters, AgendaData, FreeGamesData, GamesFilters, ShowSearchResult, ShowsData } from '@dashboard/shared';
+import type { ApiResult, WeatherData, NewsData, NewsFilters, AgendaData, FreeGamesData, GamesFilters, ShowSearchResult, ShowsData, EpisodeListEntry } from '@dashboard/shared';
 
 export type { NewsFilters, GamesFilters };
 
@@ -92,4 +92,8 @@ export function fetchUpcoming(ids: number[]): Promise<ApiResult<ShowsData>> {
 export function refreshUpcoming(ids: number[]): Promise<ApiResult<ShowsData>> {
   const param = ids.join(',');
   return post<ShowsData>(`/shows/upcoming/refresh?ids=${param}`);
+}
+
+export function fetchEpisodes(showId: number): Promise<ApiResult<EpisodeListEntry[]>> {
+  return get<EpisodeListEntry[]>(`/shows/episodes?id=${showId}`);
 }
