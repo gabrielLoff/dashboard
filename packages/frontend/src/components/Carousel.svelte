@@ -36,7 +36,6 @@
   }
 
   function handleWheel(e: WheelEvent) {
-    e.preventDefault();
     if (Math.abs(e.deltaY) < 10) return;
     if (e.deltaY > 0) {
       goTo(activeIndex + 1);

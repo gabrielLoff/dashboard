@@ -32,6 +32,12 @@
   const isLoading = $derived(isLoadingProp ?? query?.isLoading ?? false);
   const isFetching = $derived(isFetchingProp ?? query?.isFetching ?? false);
   const timeAgo = $derived(updatedAt ? formatTimeAgo(updatedAt) : '');
+  function handleWheel(e: WheelEvent) {
+    const el = e.currentTarget as HTMLElement;
+    if (el.scrollHeight > el.clientHeight) {
+      e.stopPropagation();
+    }
+  }
 </script>
 
 <div class={cn('relative flex h-full flex-col overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900', className)}>
@@ -56,7 +62,7 @@
     </button>
   </div>
 
-  <div class="relative flex-1 overflow-y-auto p-5">
+  <div class="relative flex-1 overflow-y-auto p-5" onwheel={handleWheel}>
     {#if background}
       <div class="absolute inset-0 overflow-hidden pointer-events-none">
         {@render background()}
