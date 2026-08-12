@@ -6,7 +6,7 @@
   import ThemeToggle from '$components/ThemeToggle.svelte';
   import { Toaster } from 'svelte-french-toast';
   import { initSync } from '$lib/sync-service';
-  import { createHabitSyncAdapter, createShowSyncAdapter, createLayoutSyncAdapter } from '$lib/store-sync-adapters';
+  import { createHabitSyncAdapter, createShowSyncAdapter, createLayoutSyncAdapter, createProgressSyncAdapter } from '$lib/store-sync-adapters';
   import { weatherIcon } from '$lib/weather-store';
   import { applyGradient } from '$lib/gradient-theme';
   import { getBreakpoint, type Breakpoint } from '$lib/responsive-layout';
@@ -25,6 +25,7 @@
       createHabitSyncAdapter(),
       createShowSyncAdapter(),
       createLayoutSyncAdapter(),
+      createProgressSyncAdapter(),
     ]);
 
     breakpoint = getBreakpoint();

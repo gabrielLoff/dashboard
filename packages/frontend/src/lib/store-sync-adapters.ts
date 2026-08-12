@@ -1,11 +1,14 @@
 import { habitStore, type Habit } from './habit-store';
 import { showStore, type WatchlistEntry } from './show-store';
 import { layoutStore } from './layout-store';
+import { progressStore } from './progress-store';
+import type { EpisodeProgress } from '@dashboard/shared';
 
 export interface SyncData {
   habits: Habit[];
   watchlist: WatchlistEntry[];
   layout: { carouselOrder: string[] };
+  progress: EpisodeProgress[];
 }
 
 export interface StoreSyncAdapter<T> {
@@ -84,6 +87,29 @@ export function createLayoutSyncAdapter(): StoreSyncAdapter<string[]> {
     subscribe(onChange) {
       return layoutStore.subscribe((state) => {
         onChange(state.carouselOrder);
+      });
+    },
+  };
+}
+
+async function pushProgress(progress: EpisodeProgress[]): Promise<void> {
+  const res = await fetch(`${BASE}/sync/progress`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ progress }),
+  });
+  if (!res.ok) throw new Error(`pushProgress failed: ${res.status}`);
+}
+
+export function createProgressSyncAdapter(): StoreSyncAdapter<EpisodeProgress[]> {
+  return {
+    hydrate(data) {
+      progressStore.setProgress(data.progress);
+    },
+    push: pushProgress,
+    subscribe(onChange) {
+      return progressStore.subscribe((state) => {
+        onChange(state.progress);
       });
     },
   };
