@@ -1,21 +1,19 @@
 <script lang="ts">
   import { Tv, Plus, X, Check, Search, Loader2 } from 'lucide-svelte';
   import WidgetCard from '../../components/WidgetCard.svelte';
-  import { manifest } from './manifest';
+  import { manifest, searchShows } from './manifest';
   import { createWidgetQuery, createWidgetRefresh } from '$lib/widget-query';
   import { isOk, isUpcomingEpisode, type UpcomingEntry, type ShowSearchResult } from '@dashboard/shared';
   import type { ApiResult, ShowsData } from '@dashboard/shared';
-  import { searchShows } from '$lib/api-client';
   import { showStore, watchlistIds } from '$lib/show-store';
-
+  import { createShowSearch } from './search.svelte';
 
   let {} = $props();
 
   let showModal = $state(false);
   let searchInput = $state('');
-  let searchResults = $state<ShowSearchResult[]>([]);
-  let isSearching = $state(false);
-  let debounceTimer = $state<ReturnType<typeof setTimeout>>();
+
+  const search = createShowSearch(searchShows);
 
   const query = $derived(createWidgetQuery(manifest, $watchlistIds));
   const data = $derived<ApiResult<ShowsData> | undefined>($query.data);
@@ -27,29 +25,14 @@
 
   function handleSearchInput(value: string) {
     searchInput = value;
-    if (debounceTimer) clearTimeout(debounceTimer);
-    if (!value.trim()) {
-      searchResults = [];
-      isSearching = false;
-      return;
-    }
-    isSearching = true;
-    debounceTimer = setTimeout(async () => {
-      const result = await searchShows(value.trim());
-      if (isOk(result)) {
-        searchResults = result.data;
-      } else {
-        searchResults = [];
-      }
-      isSearching = false;
-    }, 300);
+    search.search(value);
   }
 
   function addShow(show: ShowSearchResult) {
     showStore.addShow(show.id, show.name, show.image?.medium);
     showModal = false;
     searchInput = '';
-    searchResults = [];
+    search.clear();
   }
 
   function removeShow(id: number) {
@@ -151,13 +134,13 @@
         </div>
 
         <div class="mt-3 max-h-80 overflow-y-auto">
-          {#if isSearching}
+          {#if search.isSearching}
             <div class="flex items-center justify-center py-4">
               <Loader2 class="h-5 w-5 animate-spin text-neutral-400" />
             </div>
-          {:else if searchResults.length > 0}
+          {:else if search.results.length > 0}
             <div class="flex flex-col gap-1">
-              {#each searchResults as show (show.id)}
+              {#each search.results as show (show.id)}
                 {@const isTracked = $watchlistIds.includes(show.id)}
                 <button
                   onclick={() => !isTracked && addShow(show)}

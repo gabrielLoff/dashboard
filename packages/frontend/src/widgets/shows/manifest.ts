@@ -1,7 +1,9 @@
 import type { WidgetManifest } from '@dashboard/shared';
 import { queryKeys } from '@dashboard/shared';
-import { fetchUpcoming, refreshUpcoming } from '$lib/api-client';
+import { fetchUpcoming, refreshUpcoming, searchShows } from '$lib/api-client';
 import ShowsWidget from './ShowsWidget.svelte';
+
+export { searchShows };
 
 export const manifest: WidgetManifest = {
   id: 'shows',
