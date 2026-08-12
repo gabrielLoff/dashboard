@@ -14,9 +14,8 @@ export interface WeatherArgs {
   location?: string;
 }
 
-const sourceConfigs: Record<string, typeof baseConfigs[string]> = {
-  ...baseConfigs,
-  weather: {
+function getWeatherConfig() {
+  return {
     key: (args?: WeatherArgs) =>
       args?.lat != null && args?.lon != null
         ? queryKeys.weather.byCoords(args.lat, args.lon)
@@ -27,18 +26,26 @@ const sourceConfigs: Record<string, typeof baseConfigs[string]> = {
         : fetchWeather(args?.location),
     staleTime: 5 * 60 * 1000,
     refetchInterval: 10 * 60 * 1000,
-  },
-};
+  };
+}
+
+function getSourceConfig(name: SourceName) {
+  if (name === 'weather') {
+    return getWeatherConfig();
+  }
+  return baseConfigs[name];
+}
 
 export function useSourceQuery(name: SourceName, ...args: unknown[]) {
-  const config = sourceConfigs[name];
+  const config = getSourceConfig(name);
   if (!config) {
     throw new Error(`Unknown source: ${name}`);
   }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const typedArgs = args as any[];
   return createQuery({
-    queryKey: config.key(...args),
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    queryFn: (): Promise<any> => config.fn(...args),
+    queryKey: config.key(...typedArgs),
+    queryFn: (): Promise<any> => config.fn(...typedArgs),
     staleTime: config.staleTime,
     refetchInterval: config.refetchInterval,
   });
