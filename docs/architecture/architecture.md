@@ -8,10 +8,13 @@ Monorepo with four packages sharing a TypeScript type layer. The **frontend** (S
 graph TD
     subgraph Frontend["Frontend (Vite :5173)"]
         direction TB
-        A["App.svelte<br/>CSS Grid + Drag/Resize"]
+        A["App.svelte<br/>Two-column layout"]
+        LC["Left Column (40%)"]
+        RC["Right Column (60%)"]
         W1["WeatherWidget"]
-        W2["NewsWidget"]
         W3["AgendaWidget"]
+        Carousel["Carousel<br/>swipe/tabs"]
+        W2["NewsWidget"]
         W4["GamesWidget"]
         W5["HabitWidget"]
         W6["ShowsWidget"]
@@ -44,12 +47,19 @@ graph TD
         E6["BigDataCloud<br/>(reverse geocode)"]
     end
 
-    A --> W1 --> TQ --> API
-    A --> W2 --> TQ --> API
-    A --> W3 --> TQ --> API
-    A --> W4 --> TQ --> API
-    A --> W5
-    A --> W6 --> TQ --> API
+    A --> LC --> W1
+    A --> LC --> W3
+    A --> RC --> Carousel --> W2
+    A --> RC --> Carousel --> W4
+    A --> RC --> Carousel --> W5
+    A --> RC --> Carousel --> W6
+
+    W1 --> TQ --> API
+    W2 --> TQ --> API
+    W3 --> TQ --> API
+    W4 --> TQ --> API
+    W5
+    W6 --> TQ --> API
 
     API -->|"HTTP /api/*"| BFF
 
@@ -102,24 +112,21 @@ dashboard/
 │   │
 │   └── frontend/            # Svelte 5 + Vite
 │       └── src/
-│           ├── App.svelte           # Root layout, orchestrates drag/resize/gradient/responsive
+│           ├── App.svelte           # Root layout, two-column (left + carousel), responsive
 │           ├── main.ts              # App mount + global CSS
 │           ├── app.css              # Tailwind v4 + dark variant
 │           ├── lib/
 │           │   ├── api-client.ts    # Centralized HTTP client (GET/POST per route)
 │           │   ├── query-client.ts  # TanStack QueryClient config
 │           │   ├── query-config.ts  # useSourceQuery() — imports from widget-registry
-│           │   ├── widget-registry.ts # Collects all manifests: COMPONENTS, sourceConfigs, WIDGET_IDS, layouts
+│           │   ├── widget-registry.ts # Collects all manifests: COMPONENTS, sourceConfigs, WIDGET_IDS, CAROUSEL_ITEMS
 │           │   ├── theme.svelte.ts  # Dark/light theme store (Svelte runes)
-│           │   ├── layout-store.ts  # Widget order + positions, persisted to localStorage
+│           │   ├── layout-store.ts  # Carousel order, persisted to localStorage
 │           │   ├── habit-store.ts   # Client-side habit state (reducer + localStorage)
 │           │   ├── show-store.ts    # TV show watchlist (localStorage)
-│           │   ├── sync-service.ts  # Pull/push state to BFF (habits, watchlist, layout)
-│           │   ├── drag-controller.svelte.ts    # Drag-and-drop composable
-│           │   ├── resize-controller.svelte.ts  # Edge/corner resize composable
+│           │   ├── sync-service.ts  # Pull/push state to BFF (habits, watchlist, carousel order)
 │           │   ├── gradient-theme.ts            # Weather-aware background gradient
-│           │   ├── responsive-layout.ts         # Mobile/tablet/desktop breakpoint positions
-│           │   ├── grid-engine.ts   # Grid math: snap, collision, bounds
+│           │   ├── responsive-layout.ts         # Breakpoint detection
 │           │   ├── utils.ts         # cn() (clsx + tailwind-merge), formatTimeAgo()
 │           │   ├── geolocation.ts   # Browser Geolocation API wrapper
 │           │   ├── location-cache.ts # localStorage cache for coords
@@ -127,15 +134,15 @@ dashboard/
 │           │   └── weather-location.ts # Location resolution chain
 │           ├── components/
 │           │   ├── WidgetCard.svelte  # Widget shell: header, spinner, error, refresh
-│           │   ├── WidgetLayout.svelte # Drag + resize handles wrapper
+│           │   ├── Carousel.svelte    # Vertical carousel with icon tabs, swipe/scroll navigation
 │           │   └── ThemeToggle.svelte # Dark/light toggle button
 │           └── widgets/
-│               ├── weather/  # WeatherWidget + manifest (geolocation + Open-Meteo)
-│               ├── news/     # NewsWidget + manifest (filterable)
-│               ├── agenda/   # AgendaWidget + manifest (Google Calendar)
-│               ├── games/    # GamesWidget + manifest (filterable + paginated)
-│               ├── shows/    # ShowsWidget + manifest (TVmaze search + upcoming)
-│               └── habits/   # HabitWidget + manifest (client-side only, localStorage)
+│               ├── weather/  # WeatherWidget + manifest (zone: 'left', geolocation + Open-Meteo)
+│               ├── news/     # NewsWidget + manifest (zone: 'carousel', filterable)
+│               ├── agenda/   # AgendaWidget + manifest (zone: 'left', Google Calendar)
+│               ├── games/    # GamesWidget + manifest (zone: 'carousel', filterable + paginated)
+│               ├── shows/    # ShowsWidget + manifest (zone: 'carousel', TVmaze search + upcoming)
+│               └── habits/   # HabitWidget + manifest (zone: 'carousel', client-side only, localStorage)
 ```
 
 ## Key Design Decisions
@@ -148,7 +155,8 @@ dashboard/
 | Mock data | `MOCK=true` env gate + mock-data.ts fixtures | Connectors check `isMockMode()` and return hardcoded fixtures |
 | Widget contract | &lt;WidgetCard&gt; wrapper with Snippets | Consistent shell, widgets only render their data |
 | Widget registry | `widget-registry.ts` collects all manifests | Adding a widget = one directory with manifest + component |
-| Layout | 6-col CSS Grid + drag/resize controllers | User-repositionable grid with collision avoidance |
+| Layout | Fixed two-column (40/60) + Carousel | Left column: weather + agenda. Right column: carousel with swipe/tabs for news, games, shows, habits |
+| Widget zones | `zone: 'left' \| 'carousel'` on manifests | Widgets declare their zone; registry groups them automatically |
 | Habits | Client-side only (localStorage) | No server round-trip needed; reducer pattern for state |
 | Weather location | Geolocation → reverse geocode → IP fallback → default | Progressive enhancement, 7-day cache in localStorage |
 | Theme | Dark/light via CSS class on &lt;html&gt; | Tailwind v4 `dark:` variant, persisted to localStorage |

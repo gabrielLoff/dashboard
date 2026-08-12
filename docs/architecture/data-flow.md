@@ -139,7 +139,7 @@ The consumer pattern in every widget:
 
 ## Parallel loading
 
-All six queries fire simultaneously on page load (habits resolves instantly from localStorage). TanStack Query handles request deduplication, so even if two widgets query the same source, only one request reaches the BFF.
+All six queries fire simultaneously on page load (habits resolves instantly from localStorage). On desktop, the left column widgets (weather, agenda) and the active carousel widget render immediately. Other carousel widgets render when switched to. TanStack Query handles request deduplication, so even if two widgets query the same source, only one request reaches the BFF.
 
 ```mermaid
 gantt

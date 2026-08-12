@@ -147,6 +147,23 @@ All widgets use `<WidgetCard>` from `$components/WidgetCard.svelte`. Props:
 
 The card handles the shell (header, spinner, error state, refresh button). Widgets render only their data content in `{#snippet children()}` and an optional icon in `{#snippet icon()}`. See `docs/architecture/widget-lifecycle.md`.
 
+### Two-column layout
+
+The dashboard uses a fixed two-column layout on desktop (40% left, 60% right) and a single column on mobile/tablet:
+- **Left column**: Weather (40% height) + Agenda (60% height)
+- **Right column**: Carousel with swipe/tabs navigation (News, Games, Shows, Habits)
+
+Each widget declares a `zone` in its manifest: `'left'` or `'carousel'`. The `widget-registry.ts` groups them automatically.
+
+### Carousel
+
+The Carousel component (`$components/Carousel.svelte`) provides:
+- Icon tabs at the top with labels
+- Click to jump to a specific widget
+- Swipe gestures (touch) and scroll wheel to navigate
+- Slide animation on transition
+- One widget visible at a time
+
 ### Two-layer caching
 
 - **BFF** (`TTLCache<T>`) — in-memory Map with per-source TTL (~2x frontend `staleTime`). Safety net under TanStack Query.
@@ -185,7 +202,7 @@ All packages use ESLint v9 flat config (`eslint.config.mjs`). The shared config 
 7. Add fetch functions in `packages/frontend/src/lib/api-client.ts`
 8. Create `packages/frontend/src/widgets/<name>/` with:
    - `<Name>Widget.svelte` — the widget component
-   - `manifest.ts` — exports a `WidgetManifest` with id, component, queryKey, queryFn, refreshFn, staleTime, refetchInterval, defaultLayout
+   - `manifest.ts` — exports a `WidgetManifest` with id, component, zone, queryKey, queryFn, refreshFn, staleTime, refetchInterval, defaultLayout
 9. Done — `widget-registry.ts` auto-collects the manifest. No other files need editing.
 
 ## Agent skills

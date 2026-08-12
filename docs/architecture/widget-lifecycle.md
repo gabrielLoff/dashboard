@@ -22,7 +22,7 @@ stateDiagram-v2
 
 ```
 ┌──────────────────────────────────────┐
-│  [drag] [expand] [icon] Title [refresh] │  ← header: always visible
+│  [icon] Title [refresh]              │  ← header: always visible
 ├──────────────────────────────────────┤
 │                                      │
 │  [loading]    spinner centered       │  ← isLoading = true
@@ -86,34 +86,54 @@ interface WidgetCardProps {
 
 ## Layout system
 
-Widgets live in a CSS Grid (6 columns on desktop, 2 on tablet, 1 on mobile). Each widget has a `{ col, row, colSpan, rowSpan }` position stored in `layoutStore` and persisted to localStorage. Widgets can be dragged to repositioned and resized via edge/corner handles.
+The dashboard uses a fixed two-column layout on desktop and a single-column layout on mobile/tablet.
 
 ```mermaid
 flowchart TD
     App["App.svelte"] --> LayoutStore["layoutStore<br/>(localStorage)"]
-    LayoutStore --> Order["order: string[]"]
-    LayoutStore --> Positions["widgets: Record<id, WidgetLayout>"]
+    LayoutStore --> CarouselOrder["carouselOrder: string[]"]
 
-    App --> DragCtrl["drag-controller<br/>(pointer events + grid snap)"]
-    App --> ResizeCtrl["resize-controller<br/>(edge/corner handles)"]
-    App --> Grid["CSS Grid<br/>6 cols desktop, 2 tablet, 1 mobile"]
+    App --> Desktop{"breakpoint?"}
+    Desktop -->|desktop| TwoCol["Two-column layout<br/>Left 40% + Right 60%"]
+    Desktop -->|mobile/tablet| SingleCol["Single column<br/>stacked layout"]
 
-    Grid --> W1["weather 3×3"]
-    Grid --> W2["habits 3×2"]
-    Grid --> W3["news 2×4"]
-    Grid --> W4["games 3×4"]
-    Grid --> W5["agenda 1×5"]
-    Grid --> W6["shows 3×3"]
+    TwoCol --> Left["Left Column"]
+    TwoCol --> Right["Right Column"]
+
+    Left --> Weather["WeatherWidget (40% height)"]
+    Left --> Agenda["AgendaWidget (60% height)"]
+
+    Right --> Carousel["Carousel component"]
+    Carousel --> News["NewsWidget"]
+    Carousel --> Games["GamesWidget"]
+    Carousel --> Shows["ShowsWidget"]
+    Carousel --> Habits["HabitWidget"]
 ```
+
+### Widget zones
+
+Each widget declares a `zone` in its manifest:
+- `'left'` — fixed in the left column (weather, agenda)
+- `'carousel'` — displayed in the carousel (news, games, shows, habits)
+
+The `widget-registry.ts` groups widgets by zone automatically.
+
+### Carousel
+
+The Carousel component provides:
+- Icon tabs at the top with labels
+- Click to jump to a specific widget
+- Swipe gestures (touch) and scroll wheel to navigate
+- Slide animation on transition
+- One widget visible at a time
 
 ### Key files
 
-- `widget-registry.ts` — collects all widget manifests, exports `COMPONENTS`, `sourceConfigs`, `WIDGET_IDS`, `DEFAULT_WIDGET_LAYOUTS`
-- `layout-store.ts` — Svelte store with `updatePosition(id, pos)`, `reorder(newOrder)`, `getPosition(id)`, `getOrder()`. Persisted to localStorage.
-- `drag-controller.svelte.ts` — composable for drag-and-drop with grid snapping and collision avoidance
-- `resize-controller.svelte.ts` — composable for edge/corner resize with collision checking
-- `responsive-layout.ts` — `computeResponsivePositions()` for mobile/tablet breakpoints
-- `App.svelte` — thin orchestrator that composes the above modules and renders the widget grid
+- `widget-registry.ts` — collects all widget manifests, exports COMPONENTS, sourceConfigs, WIDGET_IDS, CAROUSEL_ITEMS, LEFT_WIDGET_IDS, CAROUSEL_WIDGET_IDS
+- `layout-store.ts` — Svelte store with carousel order, persisted to localStorage
+- `responsive-layout.ts` — breakpoint detection (mobile/tablet/desktop)
+- `Carousel.svelte` — carousel component with icon tabs and swipe/scroll navigation
+- `App.svelte` — orchestrates two-column layout and renders widgets
 
 ## Adding a new widget
 
@@ -126,7 +146,7 @@ flowchart TD
 7. Add fetch functions in `packages/frontend/src/lib/api-client.ts`
 8. Create `packages/frontend/src/widgets/<name>/` with:
    - `<Name>Widget.svelte` — the widget component
-   - `manifest.ts` — exports a `WidgetManifest` with id, component, queryKey, queryFn, refreshFn, staleTime, refetchInterval, defaultLayout
+   - `manifest.ts` — exports a `WidgetManifest` with id, component, zone, queryKey, queryFn, refreshFn, staleTime, refetchInterval, defaultLayout
 
 The `widget-registry.ts` auto-collects all manifests. No other files need editing.
 
@@ -141,6 +161,7 @@ import HabitWidget from './HabitWidget.svelte';
 export const manifest: WidgetManifest = {
   id: 'habits',
   component: HabitWidget,
+  zone: 'carousel',
   defaultLayout: { col: 3, row: 0, colSpan: 3, rowSpan: 2 },
 };
 ```
