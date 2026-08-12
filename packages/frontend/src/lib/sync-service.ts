@@ -1,24 +1,92 @@
-import type { Habit } from './habit-store';
-import type { WatchlistEntry } from './show-store';
 import type { ApiResult } from '@dashboard/shared';
-import { get } from 'svelte/store';
-import { habitStore } from './habit-store';
-import { showStore } from './show-store';
-import { layoutStore } from './layout-store';
-import { CAROUSEL_WIDGET_IDS } from './widget-registry';
+import type { StoreSyncAdapter, SyncData } from './store-sync-adapters';
+
+export type { SyncData };
 
 const BASE = '/api';
 
-export interface SyncData {
-  habits: Habit[];
-  watchlist: WatchlistEntry[];
-  layout: { carouselOrder: string[] };
-}
-
 type QueuedPush = () => Promise<void>;
 
-const retryQueue: QueuedPush[] = [];
-let onlineHandler: (() => void) | null = null;
+export class SyncOrchestrator {
+  private retryQueue: QueuedPush[] = [];
+  private onlineHandler: (() => void) | null = null;
+  private subscriptionsSetup = false;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private adapters: StoreSyncAdapter<any>[] = [];
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  constructor(adapters: StoreSyncAdapter<any>[]) {
+    this.adapters = adapters;
+  }
+
+  private queuePush(fn: QueuedPush): void {
+    this.retryQueue.push(fn);
+  }
+
+  private async retryQueuedPushes(): Promise<void> {
+    const pending = [...this.retryQueue];
+    this.retryQueue.length = 0;
+
+    for (const fn of pending) {
+      try {
+        await fn();
+      } catch {
+        this.retryQueue.push(fn);
+      }
+    }
+  }
+
+  private setupOnlineListener(): void {
+    if (this.onlineHandler) return;
+    this.onlineHandler = () => {
+      this.retryQueuedPushes();
+    };
+    if (typeof window !== 'undefined') {
+      window.addEventListener('online', this.onlineHandler);
+    }
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private setupSubscriptions(adapters: StoreSyncAdapter<any>[]): void {
+    if (this.subscriptionsSetup) return;
+    this.subscriptionsSetup = true;
+
+    let skipInitial = true;
+
+    for (const adapter of adapters) {
+      adapter.subscribe((data) => {
+        if (skipInitial) return;
+        this.safePush(adapter, data);
+      });
+    }
+
+    skipInitial = false;
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private safePush(adapter: StoreSyncAdapter<any>, data: any): void {
+    adapter.push(data).catch(() => {
+      this.queuePush(() => adapter.push(data));
+    });
+  }
+
+  async init(): Promise<SyncData | null> {
+    this.setupOnlineListener();
+
+    const result = await pullAll();
+    if (result.ok) {
+      const serverData = result.data;
+      for (const adapter of this.adapters) {
+        adapter.hydrate(serverData);
+      }
+      this.setupSubscriptions(this.adapters);
+      return serverData;
+    }
+
+    this.setupSubscriptions(this.adapters);
+    return null;
+  }
+}
 
 export async function pullAll(): Promise<ApiResult<SyncData>> {
   try {
@@ -30,129 +98,8 @@ export async function pullAll(): Promise<ApiResult<SyncData>> {
   }
 }
 
-export async function pushHabits(habits: Habit[]): Promise<void> {
-  const res = await fetch(`${BASE}/sync/habits`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ habits }),
-  });
-  if (!res.ok) throw new Error(`pushHabits failed: ${res.status}`);
-}
-
-export async function pushWatchlist(entries: WatchlistEntry[]): Promise<void> {
-  const res = await fetch(`${BASE}/sync/watchlist`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ entries }),
-  });
-  if (!res.ok) throw new Error(`pushWatchlist failed: ${res.status}`);
-}
-
-export async function pushLayout(carouselOrder: string[]): Promise<void> {
-  const res = await fetch(`${BASE}/sync/layout`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ carouselOrder }),
-  });
-  if (!res.ok) throw new Error(`pushLayout failed: ${res.status}`);
-}
-
-function queuePush(fn: QueuedPush): void {
-  retryQueue.push(fn);
-}
-
-async function retryQueuedPushes(): Promise<void> {
-  const pending = [...retryQueue];
-  retryQueue.length = 0;
-
-  for (const fn of pending) {
-    try {
-      await fn();
-    } catch {
-      retryQueue.push(fn);
-    }
-  }
-}
-
-function setupOnlineListener(): void {
-  if (onlineHandler) return;
-  onlineHandler = () => {
-    retryQueuedPushes();
-  };
-  if (typeof window !== 'undefined') {
-    window.addEventListener('online', onlineHandler);
-  }
-}
-
-export async function initSync(): Promise<SyncData | null> {
-  setupOnlineListener();
-
-  const result = await pullAll();
-  if (result.ok) {
-    const serverData = result.data;
-    habitStore.setHabits(serverData.habits);
-
-    showStore.reset();
-    for (const entry of serverData.watchlist) {
-      showStore.addShow(entry.id, entry.name, entry.image);
-    }
-
-    const serverOrder = serverData.layout.carouselOrder;
-    const missing = CAROUSEL_WIDGET_IDS.filter((id) => !serverOrder.includes(id));
-    const mergedOrder = [...serverOrder, ...missing];
-
-    layoutStore.reset();
-    layoutStore.reorder(mergedOrder);
-
-    setupSyncSubscriptions();
-    return serverData;
-  }
-
-  setupSyncSubscriptions();
-  return null;
-}
-
-let syncSubscriptionsSetup = false;
-
-function setupSyncSubscriptions(): void {
-  if (syncSubscriptionsSetup) return;
-  syncSubscriptionsSetup = true;
-
-  let skipInitial = true;
-
-  habitStore.subscribe((state) => {
-    if (skipInitial) return;
-    pushHabitsSafe(state.habits);
-  });
-
-  showStore.subscribe((state) => {
-    if (skipInitial) return;
-    pushWatchlistSafe(state.entries);
-  });
-
-  layoutStore.subscribe((state) => {
-    if (skipInitial) return;
-    pushLayoutSafe(state.carouselOrder);
-  });
-
-  skipInitial = false;
-}
-
-export function pushHabitsSafe(habits: Habit[]): void {
-  pushHabits(habits).catch(() => {
-    queuePush(() => pushHabits(get(habitStore).habits));
-  });
-}
-
-export function pushWatchlistSafe(entries: WatchlistEntry[]): void {
-  pushWatchlist(entries).catch(() => {
-    queuePush(() => pushWatchlist(get(showStore).entries));
-  });
-}
-
-export function pushLayoutSafe(carouselOrder: string[]): void {
-  pushLayout(carouselOrder).catch(() => {
-    const state = get(layoutStore);
-    queuePush(() => pushLayout(state.carouselOrder));
-  });
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function initSync(adapters: StoreSyncAdapter<any>[]): Promise<SyncData | null> {
+  const orchestrator = new SyncOrchestrator(adapters);
+  return orchestrator.init();
 }

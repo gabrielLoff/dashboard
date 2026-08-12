@@ -1,15 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
   pullAll,
-  pushHabits,
-  pushWatchlist,
-  pushLayout,
   initSync,
-  pushHabitsSafe,
-  pushWatchlistSafe,
-  pushLayoutSafe,
+  SyncOrchestrator,
   type SyncData,
 } from '../src/lib/sync-service';
+import type { StoreSyncAdapter } from '../src/lib/store-sync-adapters';
 
 const mockSyncData: SyncData = {
   habits: [
@@ -28,6 +24,14 @@ function mockFetch(data: unknown, ok = true) {
     ok,
     json: () => Promise.resolve(data),
   });
+}
+
+function createMockAdapter<T>(data: T): StoreSyncAdapter<T> {
+  return {
+    hydrate: vi.fn(),
+    push: vi.fn().mockResolvedValue(undefined),
+    subscribe: vi.fn().mockReturnValue(() => {}),
+  };
 }
 
 describe('pullAll', () => {
@@ -57,76 +61,75 @@ describe('pullAll', () => {
   });
 });
 
-describe('pushHabits', () => {
+describe('SyncOrchestrator', () => {
+  beforeEach(() => {
+    vi.stubGlobal('fetch', mockFetch({ ok: true, data: mockSyncData }));
+    vi.stubGlobal('window', { addEventListener: vi.fn() });
+  });
+
   afterEach(() => {
     vi.restoreAllMocks();
   });
 
-  it('sends habits to server', async () => {
-    const fetchSpy = vi.fn().mockResolvedValue({ ok: true });
-    vi.stubGlobal('fetch', fetchSpy);
+  it('hydrates all adapters with server data', async () => {
+    const adapter = createMockAdapter(mockSyncData);
+    const orchestrator = new SyncOrchestrator([adapter]);
 
-    await pushHabits(mockSyncData.habits);
+    await orchestrator.init();
 
-    expect(fetchSpy).toHaveBeenCalledWith('/api/sync/habits', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ habits: mockSyncData.habits }),
-    });
+    expect(adapter.hydrate).toHaveBeenCalledWith(mockSyncData);
   });
 
-  it('throws on non-ok response', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 500 }));
-    await expect(pushHabits([])).rejects.toThrow('pushHabits failed: 500');
-  });
-});
+  it('subscribes to all adapters', async () => {
+    const adapter = createMockAdapter(mockSyncData);
+    const orchestrator = new SyncOrchestrator([adapter]);
 
-describe('pushWatchlist', () => {
-  afterEach(() => {
-    vi.restoreAllMocks();
+    await orchestrator.init();
+
+    expect(adapter.subscribe).toHaveBeenCalled();
   });
 
-  it('sends entries to server', async () => {
-    const fetchSpy = vi.fn().mockResolvedValue({ ok: true });
-    vi.stubGlobal('fetch', fetchSpy);
+  it('sets up online listener', async () => {
+    const addEventListenerSpy = vi.fn();
+    vi.stubGlobal('window', { addEventListener: addEventListenerSpy });
 
-    await pushWatchlist(mockSyncData.watchlist);
+    const adapter = createMockAdapter(mockSyncData);
+    const orchestrator = new SyncOrchestrator([adapter]);
 
-    expect(fetchSpy).toHaveBeenCalledWith('/api/sync/watchlist', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ entries: mockSyncData.watchlist }),
-    });
+    await orchestrator.init();
+
+    expect(addEventListenerSpy).toHaveBeenCalledWith('online', expect.any(Function));
   });
 
-  it('throws on non-ok response', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 500 }));
-    await expect(pushWatchlist([])).rejects.toThrow('pushWatchlist failed: 500');
-  });
-});
+  it('returns server data on success', async () => {
+    const adapter = createMockAdapter(mockSyncData);
+    const orchestrator = new SyncOrchestrator([adapter]);
 
-describe('pushLayout', () => {
-  afterEach(() => {
-    vi.restoreAllMocks();
+    const result = await orchestrator.init();
+
+    expect(result).toEqual(mockSyncData);
   });
 
-  it('sends carousel order to server', async () => {
-    const fetchSpy = vi.fn().mockResolvedValue({ ok: true });
-    vi.stubGlobal('fetch', fetchSpy);
+  it('returns null when server is unreachable', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('network')));
 
-    const { carouselOrder } = mockSyncData.layout;
-    await pushLayout(carouselOrder);
+    const adapter = createMockAdapter(mockSyncData);
+    const orchestrator = new SyncOrchestrator([adapter]);
 
-    expect(fetchSpy).toHaveBeenCalledWith('/api/sync/layout', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ carouselOrder }),
-    });
+    const result = await orchestrator.init();
+
+    expect(result).toBeNull();
   });
 
-  it('throws on non-ok response', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 500 }));
-    await expect(pushLayout([])).rejects.toThrow('pushLayout failed: 500');
+  it('still subscribes even when server fails', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('network')));
+
+    const adapter = createMockAdapter(mockSyncData);
+    const orchestrator = new SyncOrchestrator([adapter]);
+
+    await orchestrator.init();
+
+    expect(adapter.subscribe).toHaveBeenCalled();
   });
 });
 
@@ -140,53 +143,12 @@ describe('initSync', () => {
     vi.restoreAllMocks();
   });
 
-  it('returns server data on success', async () => {
-    const result = await initSync();
+  it('creates orchestrator and initializes with adapters', async () => {
+    const adapter = createMockAdapter(mockSyncData);
+
+    const result = await initSync([adapter]);
+
     expect(result).toEqual(mockSyncData);
-  });
-
-  it('returns null when server is unreachable', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('network')));
-    const result = await initSync();
-    expect(result).toBeNull();
-  });
-});
-
-describe('pushHabitsSafe', () => {
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
-  it('calls pushHabits and does not throw on failure', async () => {
-    const fetchSpy = vi.fn().mockResolvedValue({ ok: false, status: 500 });
-    vi.stubGlobal('fetch', fetchSpy);
-
-    expect(() => pushHabitsSafe(mockSyncData.habits)).not.toThrow();
-  });
-});
-
-describe('pushWatchlistSafe', () => {
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
-  it('calls pushWatchlist and does not throw on failure', async () => {
-    const fetchSpy = vi.fn().mockResolvedValue({ ok: false, status: 500 });
-    vi.stubGlobal('fetch', fetchSpy);
-
-    expect(() => pushWatchlistSafe(mockSyncData.watchlist)).not.toThrow();
-  });
-});
-
-describe('pushLayoutSafe', () => {
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
-  it('calls pushLayout and does not throw on failure', async () => {
-    const fetchSpy = vi.fn().mockResolvedValue({ ok: false, status: 500 });
-    vi.stubGlobal('fetch', fetchSpy);
-
-    expect(() => pushLayoutSafe(mockSyncData.layout.carouselOrder)).not.toThrow();
+    expect(adapter.hydrate).toHaveBeenCalled();
   });
 });
