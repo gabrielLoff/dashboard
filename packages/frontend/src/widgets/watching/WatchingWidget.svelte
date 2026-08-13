@@ -8,7 +8,6 @@
   import { watchlist } from '$lib/show-store';
   import { fetchEpisodes } from '$lib/api-client';
   import EpisodePickerModal from './EpisodePickerModal.svelte';
-  import { onMount } from 'svelte';
 
   let {} = $props();
 
@@ -56,7 +55,7 @@
     return Math.min(100, Math.round((currentEpisode / totalEpisodes) * 100));
   }
 
-  onMount(() => {
+  $effect(() => {
     for (const show of $watchlist) {
       const existing = $episodeCounts[show.id];
       if (existing != null) continue;
