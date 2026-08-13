@@ -14,9 +14,6 @@ const mockSyncData: SyncData = {
   watchlist: [
     { id: 101, name: 'Breaking Bad', addedAt: '2026-07-28T10:00:00Z' },
   ],
-  layout: {
-    carouselOrder: ['news', 'games', 'shows', 'habits'],
-  },
 };
 
 function mockFetch(data: unknown, ok = true) {

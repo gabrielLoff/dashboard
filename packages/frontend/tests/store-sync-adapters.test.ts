@@ -1,8 +1,7 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import {
   createHabitSyncAdapter,
   createShowSyncAdapter,
-  createLayoutSyncAdapter,
 } from '../src/lib/store-sync-adapters';
 import type { SyncData } from '../src/lib/store-sync-adapters';
 
@@ -13,9 +12,6 @@ const mockSyncData: SyncData = {
   watchlist: [
     { id: 101, name: 'Breaking Bad', addedAt: '2026-07-28T10:00:00Z' },
   ],
-  layout: {
-    carouselOrder: ['news', 'games', 'shows', 'habits'],
-  },
 };
 
 describe('HabitSyncAdapter', () => {
@@ -25,7 +21,6 @@ describe('HabitSyncAdapter', () => {
 
   it('hydrate sets habits on the store', () => {
     const adapter = createHabitSyncAdapter();
-    // hydrate should not throw
     expect(() => adapter.hydrate(mockSyncData)).not.toThrow();
   });
 
@@ -90,44 +85,6 @@ describe('ShowSyncAdapter', () => {
 
   it('subscribe returns an unsubscribe function', () => {
     const adapter = createShowSyncAdapter();
-    const unsub = adapter.subscribe(() => {});
-    expect(typeof unsub).toBe('function');
-  });
-});
-
-describe('LayoutSyncAdapter', () => {
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
-  it('hydrate resets and reorders the store', () => {
-    const adapter = createLayoutSyncAdapter();
-    expect(() => adapter.hydrate(mockSyncData)).not.toThrow();
-  });
-
-  it('push sends carousel order to server', async () => {
-    const fetchSpy = vi.fn().mockResolvedValue({ ok: true });
-    vi.stubGlobal('fetch', fetchSpy);
-
-    const adapter = createLayoutSyncAdapter();
-    await adapter.push(mockSyncData.layout.carouselOrder);
-
-    expect(fetchSpy).toHaveBeenCalledWith('/api/sync/layout', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ carouselOrder: mockSyncData.layout.carouselOrder }),
-    });
-  });
-
-  it('push throws on non-ok response', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 500 }));
-
-    const adapter = createLayoutSyncAdapter();
-    await expect(adapter.push([])).rejects.toThrow('pushLayout failed: 500');
-  });
-
-  it('subscribe returns an unsubscribe function', () => {
-    const adapter = createLayoutSyncAdapter();
     const unsub = adapter.subscribe(() => {});
     expect(typeof unsub).toBe('function');
   });

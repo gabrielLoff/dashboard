@@ -12,7 +12,6 @@ describe('createSyncRoute', () => {
     const db = getDb();
     db.prepare('DELETE FROM habits').run();
     db.prepare('DELETE FROM watchlist').run();
-    db.prepare("DELETE FROM layout WHERE key = 'dashboard'").run();
     db.prepare('DELETE FROM episode_progress').run();
   });
 
@@ -27,16 +26,6 @@ describe('createSyncRoute', () => {
       expect(json.ok).toBe(true);
       expect(json.data.habits).toEqual([]);
       expect(json.data.watchlist).toEqual([]);
-    });
-
-    it('returns default layout when no layout stored', async () => {
-      const route = createSyncRoute();
-      const app = createApp(route);
-
-      const res = await app.request('/api/sync');
-      const json = await res.json();
-
-      expect(json.data.layout.carouselOrder).toEqual(['news', 'games', 'shows', 'habits']);
     });
 
     it('returns habits from database', async () => {
@@ -137,47 +126,6 @@ describe('createSyncRoute', () => {
 
       const db = getDb();
       const rows = db.prepare('SELECT * FROM watchlist').all();
-      expect(rows).toHaveLength(1);
-    });
-  });
-
-  describe('PUT /layout', () => {
-    it('stores carousel order as JSON', async () => {
-      const route = createSyncRoute();
-      const app = createApp(route);
-
-      await app.request('/api/sync/layout', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          carouselOrder: ['habits', 'news', 'games', 'shows'],
-        }),
-      });
-
-      const db = getDb();
-      const row = db.prepare("SELECT * FROM layout WHERE key = 'dashboard'").get() as { value: string };
-      const parsed = JSON.parse(row.value);
-      expect(parsed.carouselOrder).toEqual(['habits', 'news', 'games', 'shows']);
-    });
-
-    it('replaces existing layout', async () => {
-      const db = getDb();
-      db.prepare("INSERT INTO layout (key, value) VALUES (?, ?)").run(
-        'dashboard', JSON.stringify({ carouselOrder: ['old'] }),
-      );
-
-      const route = createSyncRoute();
-      const app = createApp(route);
-
-      await app.request('/api/sync/layout', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          carouselOrder: ['new'],
-        }),
-      });
-
-      const rows = db.prepare("SELECT * FROM layout WHERE key = 'dashboard'").all();
       expect(rows).toHaveLength(1);
     });
   });

@@ -15,11 +15,6 @@ interface WatchlistRow {
   added_at: string;
 }
 
-interface LayoutRow {
-  key: string;
-  value: string;
-}
-
 interface ProgressRow {
   show_id: number;
   show_name: string;
@@ -35,7 +30,6 @@ export function createSyncRoute(): Hono {
 
       const habits = db.prepare('SELECT * FROM habits').all() as HabitRow[];
       const watchlist = db.prepare('SELECT * FROM watchlist').all() as WatchlistRow[];
-      const layoutRow = db.prepare("SELECT * FROM layout WHERE key = 'dashboard'").get() as LayoutRow | undefined;
       const progress = db.prepare('SELECT * FROM episode_progress').all() as ProgressRow[];
 
       return c.json({
@@ -53,9 +47,6 @@ export function createSyncRoute(): Hono {
             image: w.image ?? undefined,
             addedAt: w.added_at,
           })),
-          layout: layoutRow
-            ? (JSON.parse(layoutRow.value) as { carouselOrder: string[] })
-            : { carouselOrder: ['news', 'games', 'shows', 'habits'] },
           progress: progress.map((p) => ({
             showId: p.show_id,
             showName: p.show_name,
@@ -91,26 +82,6 @@ export function createSyncRoute(): Hono {
         for (const w of body.entries) {
           insert.run(w.id, w.name, w.image ?? null, w.addedAt);
         }
-      });
-      replace();
-
-      return c.json({ ok: true });
-    })
-    .put('/layout', async (c) => {
-      const body = await c.req.json() as { carouselOrder: string[] };
-
-      if (!Array.isArray(body.carouselOrder)) {
-        return c.json({ ok: false, error: 'carouselOrder must be an array' }, 400);
-      }
-
-      const db = getDb();
-
-      const replace = db.transaction(() => {
-        db.prepare("DELETE FROM layout WHERE key = 'dashboard'").run();
-        db.prepare('INSERT INTO layout (key, value) VALUES (?, ?)').run(
-          'dashboard',
-          JSON.stringify({ carouselOrder: body.carouselOrder }),
-        );
       });
       replace();
 
