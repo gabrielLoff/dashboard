@@ -49,7 +49,9 @@ async function pushLayout(carouselOrder: string[]): Promise<void> {
 export function createHabitSyncAdapter(): StoreSyncAdapter<Habit[]> {
   return {
     hydrate(data) {
-      habitStore.setHabits(data.habits);
+      if (data.habits.length > 0) {
+        habitStore.setHabits(data.habits);
+      }
     },
     push: pushHabits,
     subscribe(onChange) {
@@ -63,9 +65,11 @@ export function createHabitSyncAdapter(): StoreSyncAdapter<Habit[]> {
 export function createShowSyncAdapter(): StoreSyncAdapter<WatchlistEntry[]> {
   return {
     hydrate(data) {
-      showStore.reset();
-      for (const entry of data.watchlist) {
-        showStore.addShow(entry.id, entry.name, entry.image);
+      if (data.watchlist.length > 0) {
+        showStore.reset();
+        for (const entry of data.watchlist) {
+          showStore.addShow(entry.id, entry.name, entry.image);
+        }
       }
     },
     push: pushWatchlist,
@@ -80,8 +84,10 @@ export function createShowSyncAdapter(): StoreSyncAdapter<WatchlistEntry[]> {
 export function createLayoutSyncAdapter(): StoreSyncAdapter<string[]> {
   return {
     hydrate(data) {
-      layoutStore.reset();
-      layoutStore.reorder(data.layout.carouselOrder);
+      if (data.layout.carouselOrder.length > 0) {
+        layoutStore.reset();
+        layoutStore.reorder(data.layout.carouselOrder);
+      }
     },
     push: pushLayout,
     subscribe(onChange) {
