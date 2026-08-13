@@ -104,7 +104,9 @@ async function pushProgress(progress: EpisodeProgress[]): Promise<void> {
 export function createProgressSyncAdapter(): StoreSyncAdapter<EpisodeProgress[]> {
   return {
     hydrate(data) {
-      progressStore.setProgress(data.progress);
+      if (data.progress.length > 0) {
+        progressStore.setProgress(data.progress);
+      }
     },
     push: pushProgress,
     subscribe(onChange) {

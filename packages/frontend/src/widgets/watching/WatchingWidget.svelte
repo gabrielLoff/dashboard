@@ -4,7 +4,6 @@
   import { manifest } from './manifest';
   import { createWidgetQuery, createWidgetRefresh } from '$lib/widget-query';
   import { isOk, type EpisodeProgress } from '@dashboard/shared';
-  import type { ApiResult } from '@dashboard/shared';
   import { progressStore, progress } from '$lib/progress-store';
   import EpisodePickerModal from './EpisodePickerModal.svelte';
 
@@ -13,15 +12,12 @@
   let showPickerFor = $state<number | null>(null);
 
   const query = $derived(createWidgetQuery(manifest));
-  const data = $derived<ApiResult<EpisodeProgress[]> | undefined>($query.data);
   const error = $derived($query.data && !isOk($query.data) ? $query.data.error : '');
-  const serverProgress = $derived<EpisodeProgress[]>(data && isOk(data) ? data.data : []);
 
   const handleRefresh = createWidgetRefresh(manifest, () => $query.refetch());
 
   const sortedProgress = $derived(() => {
-    const source = serverProgress.length > 0 ? serverProgress : $progress;
-    return [...source].sort((a, b) => {
+    return [...$progress].sort((a, b) => {
       const dateA = a.watchedAt ?? '';
       const dateB = b.watchedAt ?? '';
       return dateB.localeCompare(dateA);
