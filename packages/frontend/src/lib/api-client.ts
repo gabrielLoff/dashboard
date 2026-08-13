@@ -1,4 +1,4 @@
-import type { ApiResult, WeatherData, NewsData, NewsFilters, AgendaData, FreeGamesData, GamesFilters, ShowSearchResult, ShowsData, EpisodeListEntry } from '@dashboard/shared';
+import type { ApiResult, WeatherData, NewsData, NewsFilters, AgendaData, FreeGamesData, GamesFilters, ShowSearchResult, ShowsData, EpisodeListEntry, EpisodeProgress } from '@dashboard/shared';
 
 export type { NewsFilters, GamesFilters };
 
@@ -96,4 +96,15 @@ export function refreshUpcoming(ids: number[]): Promise<ApiResult<ShowsData>> {
 
 export function fetchEpisodes(showId: number): Promise<ApiResult<EpisodeListEntry[]>> {
   return get<EpisodeListEntry[]>(`/shows/episodes?id=${showId}`);
+}
+
+export async function fetchProgress(): Promise<ApiResult<EpisodeProgress[]>> {
+  const res = await fetch(`${BASE}/sync`);
+  const json = (await res.json()) as ApiResult<{ progress: EpisodeProgress[] }>;
+  if (!json.ok) return json;
+  return { ok: true, data: json.data.progress };
+}
+
+export function refreshProgress(): Promise<ApiResult<EpisodeProgress[]>> {
+  return post<EpisodeProgress[]>('/sync/progress/refresh');
 }
