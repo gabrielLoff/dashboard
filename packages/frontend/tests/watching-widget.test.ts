@@ -14,6 +14,15 @@ const mockWatchlist = [
   { id: 690, name: 'Stranger Things', addedAt: '2026-07-28T00:00:00.000Z' },
 ];
 
+const mockEpisodeCounts: Record<number, number> = {
+  46562: 65,
+  690: 50,
+};
+
+const { mockFetchEpisodes } = vi.hoisted(() => ({
+  mockFetchEpisodes: vi.fn(),
+}));
+
 vi.mock('$lib/widget-query', () => ({
   createWidgetQuery: () => ({
     subscribe: (fn: (val: unknown) => void) => {
@@ -27,10 +36,17 @@ vi.mock('$lib/widget-query', () => ({
 vi.mock('$lib/progress-store', () => ({
   progressStore: {
     dispatch: vi.fn(),
+    setEpisodeCount: vi.fn(),
   },
   progress: {
     subscribe: (fn: (val: unknown) => void) => {
       fn(mockProgress);
+      return () => {};
+    },
+  },
+  episodeCounts: {
+    subscribe: (fn: (val: unknown) => void) => {
+      fn(mockEpisodeCounts);
       return () => {};
     },
   },
@@ -55,7 +71,7 @@ vi.mock('$lib/show-store', () => ({
 vi.mock('$lib/api-client', () => ({
   fetchProgress: vi.fn(),
   refreshProgress: vi.fn(),
-  fetchEpisodes: vi.fn(),
+  fetchEpisodes: mockFetchEpisodes,
 }));
 
 vi.mock('svelte-french-toast', () => ({
@@ -71,6 +87,7 @@ import WatchingWidget from '../src/widgets/watching/WatchingWidget.svelte';
 describe('WatchingWidget', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockFetchEpisodes.mockResolvedValue(ok([]));
   });
 
   it('renders show names', () => {
@@ -88,5 +105,25 @@ describe('WatchingWidget', () => {
   it('renders widget title', () => {
     render(WatchingWidget);
     expect(screen.getByText('Watching')).toBeInTheDocument();
+  });
+
+  it('renders progress bars', () => {
+    const { container } = render(WatchingWidget);
+    const bars = container.querySelectorAll('[style*="width"]');
+    expect(bars.length).toBeGreaterThan(0);
+  });
+
+  it('progress bar has green gradient class', () => {
+    const { container } = render(WatchingWidget);
+    const bars = container.querySelectorAll('.bg-gradient-to-r');
+    expect(bars.length).toBeGreaterThan(0);
+    expect(bars[0]).toHaveClass('from-green-400');
+  });
+
+  it('progress bar has transition class', () => {
+    const { container } = render(WatchingWidget);
+    const bars = container.querySelectorAll('.transition-all');
+    expect(bars.length).toBeGreaterThan(0);
+    expect(bars[0]).toHaveClass('duration-500');
   });
 });

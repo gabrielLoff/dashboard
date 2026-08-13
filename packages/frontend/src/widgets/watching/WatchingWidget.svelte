@@ -4,13 +4,16 @@
   import { manifest } from './manifest';
   import { createWidgetQuery, createWidgetRefresh } from '$lib/widget-query';
   import { isOk, type EpisodeProgress } from '@dashboard/shared';
-  import { progressStore, progress } from '$lib/progress-store';
+  import { progressStore, progress, episodeCounts } from '$lib/progress-store';
   import { watchlist } from '$lib/show-store';
+  import { fetchEpisodes } from '$lib/api-client';
   import EpisodePickerModal from './EpisodePickerModal.svelte';
+  import { onMount } from 'svelte';
 
   let {} = $props();
 
   let showPickerFor = $state<number | null>(null);
+  let loadingCounts = $state<Set<number>>(new Set());
 
   const query = $derived(createWidgetQuery(manifest));
   const error = $derived($query.data && !isOk($query.data) ? $query.data.error : '');
@@ -21,6 +24,8 @@
     id: number;
     name: string;
     progress: EpisodeProgress | null;
+    totalCount: number | undefined;
+    isLoading: boolean;
   }
 
   const mergedShows = $derived(() => {
@@ -33,6 +38,8 @@
       id: entry.id,
       name: entry.name,
       progress: progressMap.get(entry.id) ?? null,
+      totalCount: $episodeCounts[entry.id],
+      isLoading: loadingCounts.has(entry.id),
     }));
 
     return shows.sort((a, b) => {
@@ -40,6 +47,30 @@
       const dateB = b.progress?.watchedAt ?? '';
       return dateB.localeCompare(dateA);
     });
+  });
+
+  function getProgressPercent(show: WatchlistShow): number {
+    if (!show.progress || !show.totalCount || show.totalCount === 0) return 0;
+    const currentEpisode = (show.progress.season - 1) * 100 + show.progress.episode;
+    const totalEpisodes = show.totalCount;
+    return Math.min(100, Math.round((currentEpisode / totalEpisodes) * 100));
+  }
+
+  onMount(() => {
+    for (const show of $watchlist) {
+      const existing = $episodeCounts[show.id];
+      if (existing != null) continue;
+
+      loadingCounts = new Set([...loadingCounts, show.id]);
+      fetchEpisodes(show.id).then((result) => {
+        if (isOk(result)) {
+          progressStore.setEpisodeCount(show.id, result.data.length);
+        }
+        const next = new Set(loadingCounts);
+        next.delete(show.id);
+        loadingCounts = next;
+      });
+    }
   });
 
   function openPicker(showId: number) {
@@ -84,16 +115,29 @@
         <p class="py-4 text-center text-sm text-neutral-400">No shows tracked. Add shows in the Shows widget first.</p>
       {:else}
         {#each mergedShows() as show (show.id)}
+          {@const percent = getProgressPercent(show)}
           <button
             onclick={() => openPicker(show.id)}
-            class="flex items-center gap-2 rounded-lg border border-neutral-100 p-2 text-left transition-colors hover:bg-neutral-50 dark:border-neutral-800 dark:hover:bg-neutral-800"
+            class="flex flex-col gap-1 rounded-lg border border-neutral-100 p-2 text-left transition-colors hover:bg-neutral-50 dark:border-neutral-800 dark:hover:bg-neutral-800"
           >
-            <div class="min-w-0 flex-1">
-              <p class="truncate text-sm font-medium">{show.name}</p>
+            <div class="flex items-center gap-2">
+              <div class="min-w-0 flex-1">
+                <p class="truncate text-sm font-medium">{show.name}</p>
+              </div>
+              <span class="shrink-0 text-xs text-neutral-500 dark:text-neutral-400">
+                {show.progress ? formatProgress(show.progress) : 'Not started'}
+              </span>
             </div>
-            <span class="shrink-0 text-xs text-neutral-500 dark:text-neutral-400">
-              {show.progress ? formatProgress(show.progress) : 'Not started'}
-            </span>
+            <div class="h-[3px] w-full overflow-hidden rounded-full bg-transparent">
+              {#if show.isLoading}
+                <div class="h-full w-full animate-pulse rounded-full bg-neutral-200 dark:bg-neutral-700"></div>
+              {:else}
+                <div
+                  class="h-full rounded-full bg-gradient-to-r from-green-400 to-green-600 transition-all duration-500 ease-in-out dark:from-green-500 dark:to-green-700"
+                  style:width="{percent}%"
+                ></div>
+              {/if}
+            </div>
           </button>
         {/each}
       {/if}
