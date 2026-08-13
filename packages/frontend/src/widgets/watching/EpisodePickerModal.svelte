@@ -69,6 +69,13 @@
     }
   }
 
+  function handleWheel(e: WheelEvent) {
+    const el = e.currentTarget as HTMLElement;
+    if (el.scrollHeight > el.clientHeight) {
+      e.stopPropagation();
+    }
+  }
+
   $effect(() => {
     let cancelled = false;
     async function load() {
@@ -148,7 +155,7 @@
           </button>
         {/if}
 
-        <div class="max-h-60 overflow-y-auto">
+        <div class="max-h-60 overflow-y-auto" onwheel={handleWheel}>
           <div class="flex flex-col gap-1">
             {#each episodesForSeason() as ep (ep.number)}
               {@const watched = isWatched(ep)}
