@@ -9,6 +9,11 @@ const mockProgress: EpisodeProgress[] = [
   { showId: 690, showName: 'Stranger Things', season: 4, episode: 9, watchedAt: '2026-07-28T10:00:00.000Z' },
 ];
 
+const mockWatchlist = [
+  { id: 46562, name: 'The Last of Us', addedAt: '2026-07-28T00:00:00.000Z' },
+  { id: 690, name: 'Stranger Things', addedAt: '2026-07-28T00:00:00.000Z' },
+];
+
 vi.mock('$lib/widget-query', () => ({
   createWidgetQuery: () => ({
     subscribe: (fn: (val: unknown) => void) => {
@@ -33,9 +38,15 @@ vi.mock('$lib/progress-store', () => ({
 
 vi.mock('$lib/show-store', () => ({
   showStore: {},
+  watchlist: {
+    subscribe: (fn: (val: unknown) => void) => {
+      fn(mockWatchlist);
+      return () => {};
+    },
+  },
   watchlistIds: {
     subscribe: (fn: (val: unknown) => void) => {
-      fn([]);
+      fn([46562, 690]);
       return () => {};
     },
   },

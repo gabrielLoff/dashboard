@@ -5,6 +5,7 @@
   import { createWidgetQuery, createWidgetRefresh } from '$lib/widget-query';
   import { isOk, type EpisodeProgress } from '@dashboard/shared';
   import { progressStore, progress } from '$lib/progress-store';
+  import { watchlist } from '$lib/show-store';
   import EpisodePickerModal from './EpisodePickerModal.svelte';
 
   let {} = $props();
@@ -16,10 +17,27 @@
 
   const handleRefresh = createWidgetRefresh(manifest, () => $query.refetch());
 
-  const sortedProgress = $derived(() => {
-    return [...$progress].sort((a, b) => {
-      const dateA = a.watchedAt ?? '';
-      const dateB = b.watchedAt ?? '';
+  interface WatchlistShow {
+    id: number;
+    name: string;
+    progress: EpisodeProgress | null;
+  }
+
+  const mergedShows = $derived(() => {
+    const progressMap = new Map<number, EpisodeProgress>();
+    for (const p of $progress) {
+      progressMap.set(p.showId, p);
+    }
+
+    const shows: WatchlistShow[] = $watchlist.map((entry) => ({
+      id: entry.id,
+      name: entry.name,
+      progress: progressMap.get(entry.id) ?? null,
+    }));
+
+    return shows.sort((a, b) => {
+      const dateA = a.progress?.watchedAt ?? '';
+      const dateB = b.progress?.watchedAt ?? '';
       return dateB.localeCompare(dateA);
     });
   });
@@ -49,11 +67,6 @@
   function formatProgress(p: EpisodeProgress): string {
     return `S${p.season}E${p.episode}`;
   }
-
-  function getShowName(showId: number): string {
-    const entry = $progress.find((p) => p.showId === showId);
-    return entry?.showName ?? `Show #${showId}`;
-  }
 </script>
 
 <WidgetCard
@@ -67,19 +80,19 @@
   {/snippet}
   {#snippet children()}
     <div class="flex flex-col gap-2">
-      {#if sortedProgress().length === 0}
-        <p class="py-4 text-center text-sm text-neutral-400">No shows being watched. Add shows in the Shows widget first.</p>
+      {#if mergedShows().length === 0}
+        <p class="py-4 text-center text-sm text-neutral-400">No shows tracked. Add shows in the Shows widget first.</p>
       {:else}
-        {#each sortedProgress() as p (p.showId)}
+        {#each mergedShows() as show (show.id)}
           <button
-            onclick={() => openPicker(p.showId)}
+            onclick={() => openPicker(show.id)}
             class="flex items-center gap-2 rounded-lg border border-neutral-100 p-2 text-left transition-colors hover:bg-neutral-50 dark:border-neutral-800 dark:hover:bg-neutral-800"
           >
             <div class="min-w-0 flex-1">
-              <p class="truncate text-sm font-medium">{getShowName(p.showId)}</p>
+              <p class="truncate text-sm font-medium">{show.name}</p>
             </div>
             <span class="shrink-0 text-xs text-neutral-500 dark:text-neutral-400">
-              {formatProgress(p)}
+              {show.progress ? formatProgress(show.progress) : 'Not started'}
             </span>
           </button>
         {/each}
@@ -89,12 +102,15 @@
 </WidgetCard>
 
 {#if showPickerFor !== null}
-  <EpisodePickerModal
-    showId={showPickerFor}
-    showName={getShowName(showPickerFor)}
-    currentProgress={$progress.find((p) => p.showId === showPickerFor)}
-    onAdvance={handleAdvance}
-    onReset={() => { if (showPickerFor !== null) handleResetShow(showPickerFor); }}
-    onClose={closePicker}
-  />
+  {@const pickedShow = mergedShows().find((s) => s.id === showPickerFor)}
+  {#if pickedShow}
+    <EpisodePickerModal
+      showId={pickedShow.id}
+      showName={pickedShow.name}
+      currentProgress={pickedShow.progress ?? undefined}
+      onAdvance={handleAdvance}
+      onReset={() => handleResetShow(pickedShow.id)}
+      onClose={closePicker}
+    />
+  {/if}
 {/if}
