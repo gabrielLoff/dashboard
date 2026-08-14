@@ -189,6 +189,7 @@ export async function fetchEpisodes(showId: number): Promise<ApiResult<EpisodeLi
     season: ep.season,
     number: ep.number,
     name: ep.name,
+    airdate: ep.airdate || undefined,
   }));
 
   return { ok: true, data: episodes };

@@ -139,4 +139,5 @@ export interface EpisodeListEntry {
   season: number;
   number: number;
   name: string;
+  airdate?: string;
 }

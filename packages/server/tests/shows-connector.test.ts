@@ -344,8 +344,8 @@ describe('fetchEpisodes', () => {
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.data).toHaveLength(3);
-      expect(result.data[0]).toEqual({ season: 1, number: 1, name: 'Pilot' });
-      expect(result.data[2]).toEqual({ season: 2, number: 1, name: '...And the Bag\'s in the River' });
+      expect(result.data[0]).toEqual({ season: 1, number: 1, name: 'Pilot', airdate: '2008-01-20' });
+      expect(result.data[2]).toEqual({ season: 2, number: 1, name: '...And the Bag\'s in the River', airdate: '2009-02-15' });
     }
   });
 

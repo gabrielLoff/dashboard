@@ -24,6 +24,8 @@
   let error = $state('');
   let activeSeason = $state(1);
 
+  const today = new Date().toISOString().slice(0, 10);
+
   const seasons = $derived(() => {
     const s = new Set(episodes.map((ep) => ep.season));
     return Array.from(s).sort((a, b) => a - b);
@@ -36,6 +38,15 @@
   const currentSeason = $derived(currentProgress?.season ?? 0);
   const currentEpisode = $derived(currentProgress?.episode ?? 0);
 
+  function isUnreleased(ep: EpisodeListEntry): boolean {
+    return !!ep.airdate && ep.airdate > today;
+  }
+
+  function isSeasonUnreleased(season: number): boolean {
+    const seasonEps = episodes.filter((ep) => ep.season === season);
+    return seasonEps.length > 0 && seasonEps.every((ep) => isUnreleased(ep));
+  }
+
   function isWatched(ep: EpisodeListEntry): boolean {
     if (ep.season < currentSeason) return true;
     if (ep.season === currentSeason && ep.number <= currentEpisode) return true;
@@ -43,6 +54,7 @@
   }
 
   function handleEpisodeClick(ep: EpisodeListEntry) {
+    if (isUnreleased(ep)) return;
     if (isWatched(ep)) {
       if (ep.season === currentSeason && ep.number === currentEpisode) {
         const prevEp = episodesForSeason().find(
@@ -135,11 +147,15 @@
       {:else}
         <div class="mb-3 flex gap-1 overflow-x-auto">
           {#each seasons() as season}
+            {@const seasonUnreleased = isSeasonUnreleased(season)}
             <button
-              onclick={() => (activeSeason = season)}
-              class="shrink-0 rounded-md px-3 py-1.5 text-xs font-medium transition-colors {activeSeason === season
-                ? 'bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900'
-                : 'text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800'}"
+              onclick={() => { if (!seasonUnreleased) activeSeason = season; }}
+              disabled={seasonUnreleased}
+              class="shrink-0 rounded-md px-3 py-1.5 text-xs font-medium transition-colors {seasonUnreleased
+                ? 'cursor-not-allowed text-neutral-300 dark:text-neutral-600'
+                : activeSeason === season
+                  ? 'bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900'
+                  : 'text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800'}"
             >
               S{season}
             </button>
@@ -159,19 +175,25 @@
           <div class="flex flex-col gap-1">
             {#each episodesForSeason() as ep (ep.number)}
               {@const watched = isWatched(ep)}
+              {@const unreleased = isUnreleased(ep)}
               <button
                 onclick={() => handleEpisodeClick(ep)}
-                class="flex items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800"
+                disabled={unreleased}
+                class="flex items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors {unreleased
+                  ? 'cursor-not-allowed opacity-40'
+                  : 'hover:bg-neutral-50 dark:hover:bg-neutral-800'}"
               >
-                <div class="flex h-5 w-5 shrink-0 items-center justify-center rounded border {watched
-                  ? 'border-green-500 bg-green-500 text-white'
-                  : 'border-neutral-300 dark:border-neutral-600'}">
+                <div class="flex h-5 w-5 shrink-0 items-center justify-center rounded border {unreleased
+                  ? 'border-neutral-200 dark:border-neutral-700'
+                  : watched
+                    ? 'border-green-500 bg-green-500 text-white'
+                    : 'border-neutral-300 dark:border-neutral-600'}">
                   {#if watched}
                     <Check class="h-3 w-3" />
                   {/if}
                 </div>
-                <span class="shrink-0 text-xs text-neutral-400">{ep.number}</span>
-                <span class="min-w-0 truncate">{ep.name}</span>
+                <span class="shrink-0 text-xs {unreleased ? 'text-neutral-300 dark:text-neutral-600' : 'text-neutral-400'}">{ep.number}</span>
+                <span class="min-w-0 truncate {unreleased ? 'text-neutral-300 dark:text-neutral-600' : ''}">{ep.name}</span>
               </button>
             {/each}
           </div>
