@@ -63,7 +63,7 @@
           {#each LEFT_WIDGET_IDS as id (id)}
             {@const WidgetComponent = COMPONENTS[id]}
             {#if WidgetComponent}
-              <div class="min-h-0 flex-1">
+              <div class="min-h-0 {id === 'weather' ? 'flex-[2]' : 'flex-[3]'}">
                 <WidgetComponent />
               </div>
             {/if}
