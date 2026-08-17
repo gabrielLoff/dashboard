@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { createMockFetch } from './helpers/mock-fetch';
 
-const mockFetch = vi.fn();
-vi.stubGlobal('fetch', mockFetch);
+const mockFetch = createMockFetch();
 
 import { fetchGames, VALID_TYPES, VALID_PLATFORMS } from '../src/connectors/games.ts';
 

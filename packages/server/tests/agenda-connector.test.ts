@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { createMockFetch } from './helpers/mock-fetch';
 
 const { mockGetAccessToken } = vi.hoisted(() => ({
   mockGetAccessToken: vi.fn(),
@@ -7,8 +8,7 @@ vi.mock('../src/lib/google-auth.ts', () => ({
   getAccessToken: mockGetAccessToken,
 }));
 
-const mockFetch = vi.fn();
-vi.stubGlobal('fetch', mockFetch);
+const mockFetch = createMockFetch();
 
 import { fetchAgenda } from '../src/connectors/agenda.ts';
 
