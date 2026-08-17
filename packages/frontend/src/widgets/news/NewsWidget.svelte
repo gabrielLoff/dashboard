@@ -5,6 +5,7 @@
   import { createWidgetQuery, createWidgetRefresh } from '$lib/widget-query';
   import { isOk, type NewsItem } from '@dashboard/shared';
   import type { ApiResult, NewsData, NewsFilters } from '@dashboard/shared';
+  import { getReadingTime } from '$lib/utils';
 
 
   let {} = $props();
@@ -95,7 +96,7 @@
                   <p class="text-sm font-medium group-hover:text-primary-600">{item.title}</p>
                   <ExternalLink class="mt-0.5 h-3 w-3 shrink-0 text-neutral-300 group-hover:text-primary-500" />
                 </div>
-                <p class="mt-1 text-xs text-neutral-500 dark:text-neutral-400">{item.source}</p>
+                <p class="mt-1 text-xs text-neutral-500 dark:text-neutral-400">{item.source} · {getReadingTime(item.summary)} min read</p>
                 {#if item.summary}
                   <p class="mt-1 line-clamp-2 text-xs text-neutral-400 dark:text-neutral-500">{item.summary}</p>
                 {/if}
