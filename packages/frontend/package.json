@@ -10,7 +10,9 @@
     "lint": "eslint src/",
     "check": "svelte-check --tsconfig ./tsconfig.json",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build"
   },
   "dependencies": {
     "@dashboard/shared": "workspace:*",
@@ -21,6 +23,9 @@
   },
   "devDependencies": {
     "@dashboard/eslint-config": "workspace:*",
+    "@storybook/addon-essentials": "^8.6.14",
+    "@storybook/svelte": "^10.5.8",
+    "@storybook/svelte-vite": "^10.5.8",
     "@sveltejs/vite-plugin-svelte": "^5.0.3",
     "@tailwindcss/vite": "^4.1.10",
     "@testing-library/jest-dom": "^7.0.0",
@@ -29,6 +34,7 @@
     "eslint-plugin-svelte": "^3.5.1",
     "jsdom": "^30.0.0",
     "lucide-svelte": "^0.501.0",
+    "storybook": "^10.5.8",
     "svelte": "^5.31.4",
     "svelte-check": "^4.2.1",
     "svelte-eslint-parser": "^1.1.3",
