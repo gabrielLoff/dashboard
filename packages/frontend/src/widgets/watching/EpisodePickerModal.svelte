@@ -1,7 +1,6 @@
 <script lang="ts">
   import { X, Loader2, Check } from 'lucide-svelte';
-  import { fetchEpisodes } from '$lib/api-client';
-  import { isOk, type EpisodeProgress, type EpisodeListEntry } from '@dashboard/shared';
+  import { request, isOk, type EpisodeProgress, type EpisodeListEntry } from '@dashboard/shared';
 
   let {
     showId,
@@ -93,7 +92,7 @@
     async function load() {
       isLoading = true;
       error = '';
-      const result = await fetchEpisodes(showId);
+        const result = await request('GET /api/shows/episodes', { id: showId });
       if (cancelled) return;
       if (isOk(result)) {
         episodes = result.data;

@@ -46,11 +46,6 @@ vi.mock('@tanstack/svelte-query', () => ({
   }),
 }));
 
-vi.mock('$lib/api-client', () => ({
-  refreshWeather: vi.fn(),
-  refreshWeatherByCoords: vi.fn(),
-}));
-
 vi.mock('$lib/weather-location', () => ({
   resolveLocation: vi.fn().mockResolvedValue({ coords: null, displayName: 'Porto Alegre' }),
 }));

@@ -1,18 +1,11 @@
-import type { WidgetManifest } from '@dashboard/shared';
-import { queryKeys } from '@dashboard/shared';
-import { fetchUpcoming, refreshUpcoming, searchShows } from '$lib/api-client';
+import type { QueryWidget } from '@dashboard/shared';
 import ShowsWidget from './ShowsWidget.svelte';
 
-export { searchShows };
-
-export const manifest: WidgetManifest = {
+export const manifest = {
   id: 'shows',
   component: ShowsWidget,
   zone: 'carousel',
-  queryKey: (ids?: number[]) => queryKeys.shows.upcoming(ids ?? []),
-  queryFn: (ids?: number[]) => fetchUpcoming(ids ?? []),
-  refreshFn: (ids?: number[]) => refreshUpcoming(ids ?? []),
+  endpoint: 'GET /api/shows/upcoming',
   staleTime: 5 * 60 * 1000,
   refetchInterval: 10 * 60 * 1000,
-  defaultLayout: { col: 3, row: 5, colSpan: 3, rowSpan: 3 },
-};
+} satisfies QueryWidget;

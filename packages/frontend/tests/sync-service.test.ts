@@ -51,10 +51,10 @@ describe('pullAll', () => {
     expect(result).toEqual({ ok: false, error: 'fail' });
   });
 
-  it('returns error on network error', async () => {
+  it('returns err on network error', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('network')));
     const result = await pullAll();
-    expect(result).toEqual({ ok: false, error: 'Network error' });
+    expect(result).toEqual({ ok: false, error: 'network' });
   });
 });
 

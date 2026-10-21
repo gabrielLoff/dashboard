@@ -3,9 +3,8 @@
   import WidgetCard from '../../components/WidgetCard.svelte';
   import { manifest } from './manifest';
   import { createWidgetQuery, createWidgetRefresh } from '$lib/widget-query';
-  import { isOk, type FreeGame, type GamesFilters } from '@dashboard/shared';
+  import { request, isOk, type FreeGame, type GamesFilters } from '@dashboard/shared';
   import type { ApiResult, FreeGamesData } from '@dashboard/shared';
-  import { fetchGames } from '$lib/api-client';
 
 
   let {} = $props();
@@ -56,7 +55,7 @@
     isLoadingMore = true;
     try {
       const nextPage = currentPage + 1;
-      const result = await fetchGames({ ...filters, page: nextPage });
+        const result = await request('GET /api/games', { ...filters, page: nextPage });
       if (isOk(result)) {
         allGames = [...allGames, ...result.data.games];
         currentPage = nextPage;

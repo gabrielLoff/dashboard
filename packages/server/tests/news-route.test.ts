@@ -158,9 +158,13 @@ describe('createNewsRoute', () => {
     const route = createNewsRoute(fetchNews);
     const app = createApp(route);
 
-    await app.request('/api/news?country=us');
-    const postRes = await app.request('/api/news/refresh?country=us', { method: 'POST' });
-    const postJson = await postRes.json();
+      await app.request('/api/news?country=us');
+      const postRes = await app.request('/api/news/refresh', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ country: 'us' }),
+      });
+      const postJson = await postRes.json();
     expect(postJson.data.items[0].title).toBe('Fresh Article');
 
     const getRes = await app.request('/api/news?country=us');

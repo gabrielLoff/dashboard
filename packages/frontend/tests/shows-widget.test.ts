@@ -35,13 +35,13 @@ const mockSearchResults = [
   },
 ];
 
+const { mockCreateWidgetQuery, watchlistIdsState } = vi.hoisted(() => ({
+  mockCreateWidgetQuery: vi.fn(),
+  watchlistIdsState: { value: [46562] as number[] },
+}));
+
 vi.mock('$lib/widget-query', () => ({
-  createWidgetQuery: () => ({
-    subscribe: (fn: (val: unknown) => void) => {
-      fn({ data: ok(mockShowsData), isLoading: false, isFetching: false });
-      return () => {};
-    },
-  }),
+  createWidgetQuery: mockCreateWidgetQuery,
   createWidgetRefresh: () => vi.fn(),
 }));
 
@@ -61,7 +61,7 @@ vi.mock('$lib/show-store', () => ({
   },
   watchlistIds: {
     subscribe: (fn: (val: unknown) => void) => {
-      fn([46562]);
+      fn(watchlistIdsState.value);
       return () => {};
     },
   },
@@ -80,6 +80,39 @@ import ShowsWidget from '../src/widgets/shows/ShowsWidget.svelte';
 describe('ShowsWidget', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    watchlistIdsState.value = [46562];
+    mockCreateWidgetQuery.mockImplementation(() => ({
+      subscribe: (fn: (val: unknown) => void) => {
+        fn({ data: ok(mockShowsData), isLoading: false, isFetching: false });
+        return () => {};
+      },
+    }));
+  });
+
+  it('does not construct the network query when the watchlist is empty', () => {
+    watchlistIdsState.value = [];
+
+    render(ShowsWidget);
+
+    expect(mockCreateWidgetQuery).not.toHaveBeenCalled();
+  });
+
+  it('shows the empty-watchlist state without upcoming data', () => {
+    watchlistIdsState.value = [];
+
+    render(ShowsWidget);
+
+    expect(mockCreateWidgetQuery).not.toHaveBeenCalled();
+    expect(screen.queryByText(/S3E1 New Beginning/)).not.toBeInTheDocument();
+  });
+
+  it('constructs the query with the watchlist ids when non-empty', () => {
+    render(ShowsWidget);
+
+    expect(mockCreateWidgetQuery).toHaveBeenCalledWith(
+      expect.objectContaining({ endpoint: 'GET /api/shows/upcoming' }),
+      { ids: [46562] },
+    );
   });
 
   it('renders show names', () => {

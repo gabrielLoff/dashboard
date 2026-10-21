@@ -3,10 +3,9 @@
   import WidgetCard from '../../components/WidgetCard.svelte';
   import { manifest } from './manifest';
   import { createWidgetQuery, createWidgetRefresh } from '$lib/widget-query';
-  import { isOk, type EpisodeProgress } from '@dashboard/shared';
+  import { request, isOk, type EpisodeProgress } from '@dashboard/shared';
   import { progressStore, progress, episodeCounts } from '$lib/progress-store';
   import { watchlist } from '$lib/show-store';
-  import { fetchEpisodes } from '$lib/api-client';
   import EpisodePickerModal from './EpisodePickerModal.svelte';
 
   let {} = $props();
@@ -60,8 +59,8 @@
       const existing = $episodeCounts[show.id];
       if (existing != null) continue;
 
-      loadingCounts = new Set([...loadingCounts, show.id]);
-      fetchEpisodes(show.id).then((result) => {
+        loadingCounts = new Set([...loadingCounts, show.id]);
+        request('GET /api/shows/episodes', { id: show.id }).then((result) => {
         if (isOk(result)) {
           progressStore.setEpisodeCount(show.id, result.data.length);
         }

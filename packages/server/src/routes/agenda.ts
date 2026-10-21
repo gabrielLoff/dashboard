@@ -8,7 +8,7 @@ export function createAgendaRoute(
   fetchAgenda_: () => Promise<ApiResult<AgendaData>>,
 ) {
   return createCachedRoute(
-    (_ctx) => fetchAgenda_(),
+    () => fetchAgenda_(),
     TTL,
     () => 'agenda',
     resetTokenCache,

@@ -141,3 +141,23 @@ export interface EpisodeListEntry {
   name: string;
   airdate?: string;
 }
+
+export interface Habit {
+  id: string;
+  name: string;
+  createdAt: string;
+  completions: Record<string, boolean>;
+}
+
+export interface WatchlistEntry {
+  id: number;
+  name: string;
+  image?: string;
+  addedAt: string;
+}
+
+export interface SyncData {
+  habits: Habit[];
+  watchlist: WatchlistEntry[];
+  progress: EpisodeProgress[];
+}

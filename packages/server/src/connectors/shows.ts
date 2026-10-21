@@ -1,4 +1,4 @@
-import type { ApiResult, ShowSearchResult, UpcomingEpisode, SeasonPremiere, UpcomingEntry, ShowsData, EpisodeListEntry } from '@dashboard/shared';
+import type { ApiResult, ShowSearchResult, UpcomingEpisode, UpcomingEntry, ShowsData, EpisodeListEntry } from '@dashboard/shared';
 import { err } from '@dashboard/shared';
 
 const BASE_URL = 'https://api.tvmaze.com';

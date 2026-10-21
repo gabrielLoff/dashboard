@@ -1,13 +1,6 @@
 import 'dotenv/config';
-import { Hono } from 'hono';
-import { cors } from 'hono/cors';
 import { serve } from '@hono/node-server';
-import { createWeatherRoute } from './routes/weather.ts';
-import { createNewsRoute } from './routes/news.ts';
-import { createAgendaRoute } from './routes/agenda.ts';
-import { createGamesRoute } from './routes/games.ts';
-import { createShowsRoute } from './routes/shows.ts';
-import { createSyncRoute } from './routes/sync.ts';
+import { createApp } from './app.ts';
 import { fetchWeather, fetchWeatherByCoords } from './connectors/weather.ts';
 import { fetchNews, type NewsFilters } from './connectors/news.ts';
 import { fetchAgenda } from './connectors/agenda.ts';
@@ -17,22 +10,6 @@ import { searchShows, getUpcomingEpisodes, fetchEpisodes } from './connectors/sh
 import { getMockWeather, getMockNews, getMockAgenda, getMockGames, getMockShows, getMockShowsUpcoming } from './mock-data.ts';
 import { getAccessToken } from './lib/google-auth.ts';
 import type { ApiResult, WeatherData, NewsData, AgendaData, FreeGamesData, ShowSearchResult, ShowsData, EpisodeListEntry } from '@dashboard/shared';
-
-type CalendarStatus = 'connected' | 'missing-refresh-token';
-
-let calendarStatus: CalendarStatus = 'missing-refresh-token';
-
-const app = new Hono();
-
-app.use('*', cors({ origin: 'http://localhost:5173' }));
-
-app.get('/api/health', (c) =>
-  c.json({
-    status: 'ok',
-    mock: process.env.MOCK !== 'false',
-    calendar: calendarStatus,
-  }),
-);
 
 const mockMode = process.env.MOCK !== 'false';
 
@@ -52,28 +29,25 @@ const fetchGames_ = mockMode
   ? (() => Promise.resolve(getMockGames())) as (filters: GamesFilters) => Promise<ApiResult<FreeGamesData>>
   : fetchGames;
 const searchShows_ = mockMode
-  ? ((q: string) => Promise.resolve(getMockShows())) as (query: string) => Promise<ApiResult<ShowSearchResult[]>>
+  ? ((_q: string) => Promise.resolve(getMockShows())) as (query: string) => Promise<ApiResult<ShowSearchResult[]>>
   : searchShows;
 const getUpcomingEpisodes_ = mockMode
-  ? ((ids: number[]) => Promise.resolve(getMockShowsUpcoming())) as (ids: number[]) => Promise<ApiResult<ShowsData>>
+  ? ((_ids: number[]) => Promise.resolve(getMockShowsUpcoming())) as (ids: number[]) => Promise<ApiResult<ShowsData>>
   : getUpcomingEpisodes;
 const fetchEpisodes_ = mockMode
   ? ((_id: number) => Promise.resolve({ ok: true, data: [] } as ApiResult<EpisodeListEntry[]>))
   : fetchEpisodes;
 
-const weatherRoute = createWeatherRoute(fetchWeather_, fetchWeatherByCoords_);
-const newsRoute = createNewsRoute(fetchNews_);
-const agendaRoute = createAgendaRoute(fetchAgenda_);
-const gamesRoute = createGamesRoute(fetchGames_);
-const showsRoute = createShowsRoute(searchShows_, getUpcomingEpisodes_, fetchEpisodes_);
-const syncRoute = createSyncRoute();
-
-app.route('/api/weather', weatherRoute);
-app.route('/api/news', newsRoute);
-app.route('/api/agenda', agendaRoute);
-app.route('/api/games', gamesRoute);
-app.route('/api/shows', showsRoute);
-app.route('/api/sync', syncRoute);
+const app = createApp({
+  fetchWeather: fetchWeather_,
+  fetchWeatherByCoords: fetchWeatherByCoords_,
+  fetchNews: fetchNews_,
+  fetchAgenda: fetchAgenda_,
+  fetchGames: fetchGames_,
+  searchShows: searchShows_,
+  getUpcomingEpisodes: getUpcomingEpisodes_,
+  fetchEpisodes: fetchEpisodes_,
+});
 
 const port = Number(process.env.PORT) || 3001;
 
@@ -85,11 +59,9 @@ serve({ fetch: app.fetch, port }, (info) => {
 
 getAccessToken()
   .then(() => {
-    calendarStatus = 'connected';
     console.log('Google Calendar: connected');
   })
   .catch((e: unknown) => {
-    calendarStatus = 'missing-refresh-token';
     console.log(
       `Google Calendar: refresh token invalid — widget will show errors (${String(e)})`,
     );

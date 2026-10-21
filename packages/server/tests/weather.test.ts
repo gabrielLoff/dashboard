@@ -140,10 +140,14 @@ describe('POST /api/weather/refresh', () => {
   it('refreshes weather for coordinates (bypasses cache)', async () => {
     mockFetchWeatherByCoords.mockResolvedValue({ ok: true, data: { ...mockCoordsWeatherData } });
 
-    const app = createApp();
-    await app.request('/api/weather?lat=-23.55&lon=-46.63');
-    await app.request('/api/weather/refresh?lat=-23.55&lon=-46.63', { method: 'POST' });
-    await app.request('/api/weather?lat=-23.55&lon=-46.63');
+      const app = createApp();
+      await app.request('/api/weather?lat=-23.55&lon=-46.63');
+      await app.request('/api/weather/refresh', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lat: -23.55, lon: -46.63 }),
+      });
+      await app.request('/api/weather?lat=-23.55&lon=-46.63');
 
     expect(mockFetchWeatherByCoords).toHaveBeenCalledTimes(2);
   });

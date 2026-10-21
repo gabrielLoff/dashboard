@@ -1,10 +1,11 @@
 <script lang="ts">
   import { Tv, Plus, X, Check, Search, Loader2 } from 'lucide-svelte';
   import WidgetCard from '../../components/WidgetCard.svelte';
-  import { manifest, searchShows } from './manifest';
+  import { manifest } from './manifest';
   import { createWidgetQuery, createWidgetRefresh } from '$lib/widget-query';
-  import { isOk, isUpcomingEpisode, type UpcomingEntry, type ShowSearchResult } from '@dashboard/shared';
+  import { request, ok, isOk, isUpcomingEpisode, type UpcomingEntry, type ShowSearchResult } from '@dashboard/shared';
   import type { ApiResult, ShowsData } from '@dashboard/shared';
+  import { readable } from 'svelte/store';
   import { showStore, watchlistIds } from '$lib/show-store';
   import { createShowSearch } from './search.svelte';
 
@@ -13,15 +14,28 @@
   let showModal = $state(false);
   let searchInput = $state('');
 
-  const search = createShowSearch(searchShows);
+  const search = createShowSearch((q) => request('GET /api/shows/search', { q }));
 
-  const query = $derived(createWidgetQuery(manifest, $watchlistIds));
+  // The widget owns its precondition: no show ids, no query — the network
+  // module is never constructed, so an empty watchlist never fetches.
+  const EMPTY_UPCOMING = readable({
+    data: ok<ShowsData>({ upcoming: [], updatedAt: new Date().toISOString() }),
+    isLoading: false,
+    isFetching: false,
+    refetch: () => Promise.resolve(),
+  });
+
+  const query = $derived(
+    $watchlistIds.length > 0
+      ? createWidgetQuery(manifest, { ids: $watchlistIds })
+      : EMPTY_UPCOMING,
+  );
   const data = $derived<ApiResult<ShowsData> | undefined>($query.data);
   const error = $derived($query.data && !isOk($query.data) ? $query.data.error : '');
   const upcoming = $derived<UpcomingEntry[]>(data && isOk(data) ? data.data.upcoming : []);
   const updatedAt = $derived(data && isOk(data) ? data.data.updatedAt : undefined);
 
-  const handleRefresh = createWidgetRefresh(manifest, () => $query.refetch(), () => [$watchlistIds]);
+  const handleRefresh = createWidgetRefresh(manifest, () => $query.refetch(), () => [{ ids: $watchlistIds }]);
 
   function handleSearchInput(value: string) {
     searchInput = value;

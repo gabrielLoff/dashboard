@@ -101,14 +101,14 @@ flowchart LR
     end
 
     subgraph Client["Frontend"]
-        ApiClient["api-client.ts"]
+        Request["request() in @dashboard/shared<br/>never throws — always ApiResult<T>"]
         Query["TanStack Query"]
         Widget2["Widget.svelte"]
     end
 
     Connector -->|"ok(data) | err(msg)"| Route2
-    Route2 -->|JSON body| ApiClient
-    ApiClient -->|"ApiResult<T>"| Query
+    Route2 -->|JSON body| Request
+    Request -->|"ApiResult<T> — fetch/parse failures become err()"| Query
     Query -->|"query.data"| Widget2
 
     Widget2 -->|isOk?| Render["render data"]
@@ -183,4 +183,4 @@ gantt
 
 ## Query configuration
 
-Source query options (staleTime, refetchInterval, queryKey, queryFn) are defined in each widget's `manifest.ts` and collected by `widget-registry.ts`. The `useSourceQuery(name)` function in `query-config.ts` creates a TanStack Query with the right config, importing `sourceConfigs` from the registry. Weather has a special override in `query-config.ts` for coordinate-based queries.
+Each query-backed widget's `manifest.ts` declares `endpoint` (a key of `Endpoints`), `staleTime`, and `refetchInterval`. `createWidgetQuery` in `widget-query.ts` derives the TanStack `queryKey` from `ENDPOINT_META[endpoint].cacheKey(input)` and the `queryFn` from `request(endpoint, input)` — the widget passes only its dynamic input. `createWidgetRefresh` uses `ENDPOINT_META[endpoint].refresh` (the paired cache-bust endpoint) when one exists; otherwise Alt-click is a plain refetch.

@@ -4,13 +4,14 @@ import { render, screen, fireEvent } from '@testing-library/svelte';
 import { ok } from '@dashboard/shared';
 import type { EpisodeListEntry, EpisodeProgress } from '@dashboard/shared';
 
-const { mockFetchEpisodes } = vi.hoisted(() => ({
-  mockFetchEpisodes: vi.fn(),
+const { mockRequest } = vi.hoisted(() => ({
+  mockRequest: vi.fn(),
 }));
 
-vi.mock('$lib/api-client', () => ({
-  fetchEpisodes: mockFetchEpisodes,
-}));
+vi.mock('@dashboard/shared', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@dashboard/shared')>();
+  return { ...actual, request: mockRequest };
+});
 
 const mockEpisodes: EpisodeListEntry[] = [
   { season: 1, number: 1, name: 'Pilot' },
@@ -42,7 +43,7 @@ describe('EpisodePickerModal', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockFetchEpisodes.mockResolvedValue(ok(mockEpisodes));
+    mockRequest.mockResolvedValue(ok(mockEpisodes));
   });
 
   it('renders show name', async () => {

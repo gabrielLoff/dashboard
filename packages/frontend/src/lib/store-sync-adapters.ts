@@ -1,38 +1,14 @@
-import { habitStore, type Habit } from './habit-store';
-import { showStore, type WatchlistEntry } from './show-store';
+import { request, type SyncData, type Habit, type WatchlistEntry, type EpisodeProgress } from '@dashboard/shared';
+import { habitStore } from './habit-store';
+import { showStore } from './show-store';
 import { progressStore } from './progress-store';
-import type { EpisodeProgress } from '@dashboard/shared';
 
-export interface SyncData {
-  habits: Habit[];
-  watchlist: WatchlistEntry[];
-  progress: EpisodeProgress[];
-}
+export type { SyncData, Habit, WatchlistEntry };
 
 export interface StoreSyncAdapter<T> {
   hydrate(data: SyncData): void;
   push(data: T): Promise<void>;
   subscribe(onChange: (data: T) => void): () => void;
-}
-
-const BASE = '/api';
-
-async function pushHabits(habits: Habit[]): Promise<void> {
-  const res = await fetch(`${BASE}/sync/habits`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ habits }),
-  });
-  if (!res.ok) throw new Error(`pushHabits failed: ${res.status}`);
-}
-
-async function pushWatchlist(entries: WatchlistEntry[]): Promise<void> {
-  const res = await fetch(`${BASE}/sync/watchlist`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ entries }),
-  });
-  if (!res.ok) throw new Error(`pushWatchlist failed: ${res.status}`);
 }
 
 export function createHabitSyncAdapter(): StoreSyncAdapter<Habit[]> {
@@ -42,7 +18,10 @@ export function createHabitSyncAdapter(): StoreSyncAdapter<Habit[]> {
         habitStore.setHabits(data.habits);
       }
     },
-    push: pushHabits,
+    async push(habits) {
+      const result = await request('PUT /api/sync/habits', { habits });
+      if (!result.ok) throw new Error(result.error);
+    },
     subscribe(onChange) {
       return habitStore.subscribe((state) => {
         onChange(state.habits);
@@ -61,22 +40,16 @@ export function createShowSyncAdapter(): StoreSyncAdapter<WatchlistEntry[]> {
         }
       }
     },
-    push: pushWatchlist,
+    async push(entries) {
+      const result = await request('PUT /api/sync/watchlist', { entries });
+      if (!result.ok) throw new Error(result.error);
+    },
     subscribe(onChange) {
       return showStore.subscribe((state) => {
         onChange(state.entries);
       });
     },
   };
-}
-
-async function pushProgress(progress: EpisodeProgress[]): Promise<void> {
-  const res = await fetch(`${BASE}/sync/progress`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ progress }),
-  });
-  if (!res.ok) throw new Error(`pushProgress failed: ${res.status}`);
 }
 
 export function createProgressSyncAdapter(): StoreSyncAdapter<EpisodeProgress[]> {
@@ -86,7 +59,10 @@ export function createProgressSyncAdapter(): StoreSyncAdapter<EpisodeProgress[]>
         progressStore.setProgress(data.progress);
       }
     },
-    push: pushProgress,
+    async push(progress) {
+      const result = await request('PUT /api/sync/progress', { progress });
+      if (!result.ok) throw new Error(result.error);
+    },
     subscribe(onChange) {
       return progressStore.subscribe((state) => {
         onChange(state.progress);

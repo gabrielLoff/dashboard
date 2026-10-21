@@ -129,7 +129,7 @@ The Carousel component provides:
 
 ### Key files
 
-- `widget-registry.ts` — collects all widget manifests, exports COMPONENTS, sourceConfigs, WIDGET_IDS, CAROUSEL_ITEMS, LEFT_WIDGET_IDS, CAROUSEL_WIDGET_IDS
+- `widget-registry.ts` — collects all widget manifests, exports COMPONENTS, WIDGET_IDS, CAROUSEL_ITEMS, LEFT_WIDGET_IDS, CAROUSEL_WIDGET_IDS
 - `layout-store.ts` — Svelte store with carousel order, persisted to localStorage
 - `responsive-layout.ts` — breakpoint detection (mobile/tablet/desktop)
 - `Carousel.svelte` — carousel component with icon tabs and swipe/scroll navigation
@@ -138,32 +138,30 @@ The Carousel component provides:
 ## Adding a new widget
 
 1. Define the API type in `packages/shared/src/api-types.ts`
-2. Add a query key in `packages/shared/src/query-keys.ts`
+2. Add the endpoint to `Endpoints` and `ENDPOINT_META` in `packages/shared/src/endpoints.ts` (the contract test fails if a route is missing)
 3. Create a connector in `packages/server/src/connectors/`
 4. Add mock data in `packages/server/src/mock-data.ts`
 5. Create a route in `packages/server/src/routes/`
-6. Mount the route in `packages/server/src/index.ts`
-7. Add fetch functions in `packages/frontend/src/lib/api-client.ts`
-8. Create `packages/frontend/src/widgets/<name>/` with:
+6. Mount the route in `packages/server/src/app.ts`
+7. Create `packages/frontend/src/widgets/<name>/` with:
    - `<Name>Widget.svelte` — the widget component
-   - `manifest.ts` — exports a `WidgetManifest` with id, component, zone, queryKey, queryFn, refreshFn, staleTime, refetchInterval, defaultLayout
+   - `manifest.ts` — `satisfies QueryWidget` with id, component, zone, endpoint, staleTime, refetchInterval
 
-The `widget-registry.ts` auto-collects all manifests. No other files need editing.
+The `widget-registry.ts` auto-collects all manifests. The carousel tab list (`CAROUSEL_ITEMS`) still needs a manual entry.
 
 ### Client-only widgets (no server)
 
-For widgets that don't need server data (like Habits), skip steps 1–7. The manifest omits `queryKey`/`queryFn`/`refreshFn`/`staleTime`/`refetchInterval`:
+For widgets that don't need server data (like Habits), skip steps 1–6. The manifest `satisfies LocalWidget` — no endpoint, no TTLs:
 
 ```ts
-import type { WidgetManifest } from '@dashboard/shared';
+import type { LocalWidget } from '@dashboard/shared';
 import HabitWidget from './HabitWidget.svelte';
 
-export const manifest: WidgetManifest = {
+export const manifest = {
   id: 'habits',
   component: HabitWidget,
   zone: 'carousel',
-  defaultLayout: { col: 3, row: 0, colSpan: 3, rowSpan: 2 },
-};
+} satisfies LocalWidget;
 ```
 
 ## Testing per widget

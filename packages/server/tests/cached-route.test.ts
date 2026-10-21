@@ -113,7 +113,7 @@ describe('createCachedRoute', () => {
     expect(fetchFn).toHaveBeenCalledTimes(2);
   });
 
-  it('passes Hono context to the fetch function', async () => {
+  it('passes normalized params to the fetch function', async () => {
     fetchFn.mockResolvedValue(ok({ ok: true }));
     const route = createCachedRoute(fetchFn, 60_000, () => 'key');
     const app = createApp(route);
@@ -121,8 +121,8 @@ describe('createCachedRoute', () => {
     await app.request('/api/test?foo=bar');
 
     expect(fetchFn).toHaveBeenCalledTimes(1);
-    const ctx = fetchFn.mock.calls[0][0];
-    expect(ctx.req.query('foo')).toBe('bar');
+    const params = fetchFn.mock.calls[0][0];
+    expect(params.foo).toBe('bar');
   });
 
   it('calls onRefresh callback during POST /refresh', async () => {

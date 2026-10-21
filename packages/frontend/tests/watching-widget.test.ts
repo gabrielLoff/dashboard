@@ -19,10 +19,6 @@ const mockEpisodeCounts: Record<number, number> = {
   690: 50,
 };
 
-const { mockFetchEpisodes } = vi.hoisted(() => ({
-  mockFetchEpisodes: vi.fn(),
-}));
-
 vi.mock('$lib/widget-query', () => ({
   createWidgetQuery: () => ({
     subscribe: (fn: (val: unknown) => void) => {
@@ -68,12 +64,6 @@ vi.mock('$lib/show-store', () => ({
   },
 }));
 
-vi.mock('$lib/api-client', () => ({
-  fetchProgress: vi.fn(),
-  refreshProgress: vi.fn(),
-  fetchEpisodes: mockFetchEpisodes,
-}));
-
 vi.mock('svelte-french-toast', () => ({
   default: { success: vi.fn() },
 }));
@@ -87,7 +77,6 @@ import WatchingWidget from '../src/widgets/watching/WatchingWidget.svelte';
 describe('WatchingWidget', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockFetchEpisodes.mockResolvedValue(ok([]));
   });
 
   it('renders show names', () => {

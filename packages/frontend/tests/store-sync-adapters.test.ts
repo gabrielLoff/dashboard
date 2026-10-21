@@ -12,7 +12,12 @@ const mockSyncData: SyncData = {
   watchlist: [
     { id: 101, name: 'Breaking Bad', addedAt: '2026-07-28T10:00:00Z' },
   ],
+  progress: [],
 };
+
+function okResponse(body: unknown = { ok: true, data: null }) {
+  return { ok: true, json: () => Promise.resolve(body) };
+}
 
 describe('HabitSyncAdapter', () => {
   afterEach(() => {
@@ -25,7 +30,7 @@ describe('HabitSyncAdapter', () => {
   });
 
   it('push sends habits to server', async () => {
-    const fetchSpy = vi.fn().mockResolvedValue({ ok: true });
+    const fetchSpy = vi.fn().mockResolvedValue(okResponse());
     vi.stubGlobal('fetch', fetchSpy);
 
     const adapter = createHabitSyncAdapter();
@@ -38,11 +43,13 @@ describe('HabitSyncAdapter', () => {
     });
   });
 
-  it('push throws on non-ok response', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 500 }));
+  it('push throws with the error the server returned', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(
+      okResponse({ ok: false, error: 'sync table locked' }),
+    ));
 
     const adapter = createHabitSyncAdapter();
-    await expect(adapter.push([])).rejects.toThrow('pushHabits failed: 500');
+    await expect(adapter.push([])).rejects.toThrow('sync table locked');
   });
 
   it('subscribe returns an unsubscribe function', () => {
@@ -63,7 +70,7 @@ describe('ShowSyncAdapter', () => {
   });
 
   it('push sends entries to server', async () => {
-    const fetchSpy = vi.fn().mockResolvedValue({ ok: true });
+    const fetchSpy = vi.fn().mockResolvedValue(okResponse());
     vi.stubGlobal('fetch', fetchSpy);
 
     const adapter = createShowSyncAdapter();
@@ -76,11 +83,13 @@ describe('ShowSyncAdapter', () => {
     });
   });
 
-  it('push throws on non-ok response', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 500 }));
+  it('push throws with the error the server returned', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(
+      okResponse({ ok: false, error: 'sync table locked' }),
+    ));
 
     const adapter = createShowSyncAdapter();
-    await expect(adapter.push([])).rejects.toThrow('pushWatchlist failed: 500');
+    await expect(adapter.push([])).rejects.toThrow('sync table locked');
   });
 
   it('subscribe returns an unsubscribe function', () => {

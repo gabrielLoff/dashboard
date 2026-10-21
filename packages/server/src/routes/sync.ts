@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
 import { getDb } from '../db.ts';
+import type { Habit, WatchlistEntry, EpisodeProgress } from '@dashboard/shared';
 
 interface HabitRow {
   id: string;
@@ -58,7 +59,7 @@ export function createSyncRoute(): Hono {
       });
     })
     .put('/habits', async (c) => {
-      const body = await c.req.json() as { habits: Array<{ id: string; name: string; createdAt: string; completions: Record<string, boolean> }> };
+      const body: { habits: Habit[] } = await c.req.json();
       const db = getDb();
 
       const replace = db.transaction(() => {
@@ -70,10 +71,10 @@ export function createSyncRoute(): Hono {
       });
       replace();
 
-      return c.json({ ok: true });
+      return c.json({ ok: true, data: null });
     })
     .put('/watchlist', async (c) => {
-      const body = await c.req.json() as { entries: Array<{ id: number; name: string; image?: string; addedAt: string }> };
+      const body: { entries: WatchlistEntry[] } = await c.req.json();
       const db = getDb();
 
       const replace = db.transaction(() => {
@@ -85,10 +86,10 @@ export function createSyncRoute(): Hono {
       });
       replace();
 
-      return c.json({ ok: true });
+      return c.json({ ok: true, data: null });
     })
     .put('/progress', async (c) => {
-      const body = await c.req.json() as { progress: Array<{ showId: number; showName: string; season: number; episode: number; watchedAt: string }> };
+      const body: { progress: EpisodeProgress[] } = await c.req.json();
       const db = getDb();
 
       const replace = db.transaction(() => {
@@ -100,6 +101,6 @@ export function createSyncRoute(): Hono {
       });
       replace();
 
-      return c.json({ ok: true });
+      return c.json({ ok: true, data: null });
     });
 }

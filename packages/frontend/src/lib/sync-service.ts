@@ -1,9 +1,7 @@
-import type { ApiResult } from '@dashboard/shared';
-import type { StoreSyncAdapter, SyncData } from './store-sync-adapters';
+import { request, type ApiResult, type SyncData } from '@dashboard/shared';
+import type { StoreSyncAdapter } from './store-sync-adapters';
 
 export type { SyncData };
-
-const BASE = '/api';
 
 type QueuedPush = () => Promise<void>;
 
@@ -39,7 +37,7 @@ export class SyncOrchestrator {
   private setupOnlineListener(): void {
     if (this.onlineHandler) return;
     this.onlineHandler = () => {
-      this.retryQueuedPushes();
+      void this.retryQueuedPushes();
     };
     if (typeof window !== 'undefined') {
       window.addEventListener('online', this.onlineHandler);
@@ -89,13 +87,7 @@ export class SyncOrchestrator {
 }
 
 export async function pullAll(): Promise<ApiResult<SyncData>> {
-  try {
-    const res = await fetch(`${BASE}/sync`);
-    const json = (await res.json()) as ApiResult<SyncData>;
-    return json;
-  } catch {
-    return { ok: false, error: 'Network error' };
-  }
+  return request('GET /api/sync');
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

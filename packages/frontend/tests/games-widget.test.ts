@@ -50,11 +50,6 @@ vi.mock('$lib/widget-query', () => ({
   createWidgetRefresh: () => vi.fn(),
 }));
 
-vi.mock('$lib/api-client', () => ({
-  refreshGames: vi.fn(),
-  fetchGames: vi.fn(),
-}));
-
 vi.mock('svelte-french-toast', () => ({
   default: { success: vi.fn() },
 }));

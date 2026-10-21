@@ -35,25 +35,3 @@ export const CAROUSEL_ITEMS: CarouselItem[] = [
   { id: 'habits', icon: CheckCircle, label: 'Habits' },
   { id: 'watching', icon: Eye, label: 'Watching' },
 ];
-
-interface SourceConfig {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  key: (...args: any[]) => readonly unknown[];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  fn: (...args: any[]) => Promise<any>;
-  staleTime: number;
-  refetchInterval: number;
-}
-
-export const sourceConfigs: Record<string, SourceConfig> = {};
-
-for (const m of manifests) {
-  if (m.queryKey && m.queryFn && m.staleTime != null && m.refetchInterval != null) {
-    sourceConfigs[m.id] = {
-      key: m.queryKey,
-      fn: m.queryFn,
-      staleTime: m.staleTime,
-      refetchInterval: m.refetchInterval,
-    };
-  }
-}

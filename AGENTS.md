@@ -194,16 +194,15 @@ All packages use ESLint v9 flat config (`eslint.config.mjs`). The shared config 
 ### Adding a new data source
 
 1. Add type in `packages/shared/src/api-types.ts`
-2. Add query key in `packages/shared/src/query-keys.ts`
+2. Add the endpoint to `Endpoints` and `ENDPOINT_META` in `packages/shared/src/endpoints.ts` — the key is `verb + path` (e.g. `'GET /api/weather'`); declare its input shape, response shape, cache identity (`cachePrefix`/`cacheKey`), and paired cache-bust (`refresh`) if any
 3. Add mock data in `packages/server/src/mock-data.ts`
 4. Create connector in `packages/server/src/connectors/`
 5. Create route in `packages/server/src/routes/`
-6. Register route in `packages/server/src/index.ts`
-7. Add fetch functions in `packages/frontend/src/lib/api-client.ts`
-8. Create `packages/frontend/src/widgets/<name>/` with:
+6. Register route in `packages/server/src/app.ts` (the contract test fails if `Endpoints` and the route table disagree)
+7. Create `packages/frontend/src/widgets/<name>/` with:
    - `<Name>Widget.svelte` — the widget component
-   - `manifest.ts` — exports a `WidgetManifest` with id, component, zone, queryKey, queryFn, refreshFn, staleTime, refetchInterval, defaultLayout
-9. Done — `widget-registry.ts` auto-collects the manifest. No other files need editing.
+   - `manifest.ts` — `satisfies QueryWidget` with id, component, zone, endpoint (the `Endpoints` key), staleTime, refetchInterval. Queries and refreshes go through `request(endpoint, input)` via `createWidgetQuery`/`createWidgetRefresh`; there are no fetch functions to write
+8. Done — `widget-registry.ts` auto-collects the manifest. The carousel tab list in `widget-registry.ts` (`CAROUSEL_ITEMS`) still needs a manual entry.
 
 ## Agent skills
 

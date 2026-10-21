@@ -1,16 +1,11 @@
-import type { WidgetManifest } from '@dashboard/shared';
-import { queryKeys } from '@dashboard/shared';
-import { fetchProgress, refreshProgress } from '$lib/api-client';
+import type { QueryWidget } from '@dashboard/shared';
 import WatchingWidget from './WatchingWidget.svelte';
 
-export const manifest: WidgetManifest = {
+export const manifest = {
   id: 'watching',
   component: WatchingWidget,
   zone: 'carousel',
-  queryKey: () => queryKeys.progress.list(),
-  queryFn: () => fetchProgress(),
-  refreshFn: () => refreshProgress(),
+  endpoint: 'GET /api/sync',
   staleTime: 60_000,
   refetchInterval: 120_000,
-  defaultLayout: { col: 0, row: 0, colSpan: 3, rowSpan: 3 },
-};
+} satisfies QueryWidget;

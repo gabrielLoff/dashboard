@@ -181,7 +181,11 @@ describe('createShowsRoute', () => {
       const app = createApp(route);
 
       await app.request('/api/shows/upcoming?ids=46562');
-      const postRes = await app.request('/api/shows/upcoming/refresh?ids=46562', { method: 'POST' });
+      const postRes = await app.request('/api/shows/upcoming/refresh', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: '46562' }),
+      });
       const postJson = await postRes.json();
       expect(postJson.data.upcoming[0].number).toBe(2);
 

@@ -56,10 +56,6 @@ vi.mock('$lib/widget-query', () => ({
   createWidgetRefresh: () => vi.fn(),
 }));
 
-vi.mock('$lib/api-client', () => ({
-  refreshAgenda: vi.fn(),
-}));
-
 vi.mock('svelte-french-toast', () => ({
   default: { success: vi.fn() },
 }));

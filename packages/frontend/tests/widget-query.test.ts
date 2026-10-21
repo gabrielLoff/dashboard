@@ -4,21 +4,6 @@ vi.mock('@tanstack/svelte-query', () => ({
   createQuery: vi.fn(),
 }));
 
-vi.mock('../src/lib/api-client.ts', () => ({
-  fetchWeather: vi.fn(),
-  fetchWeatherByCoords: vi.fn(),
-  fetchNews: vi.fn(),
-  fetchAgenda: vi.fn(),
-  fetchGames: vi.fn(),
-  fetchUpcoming: vi.fn(),
-  refreshWeather: vi.fn(),
-  refreshWeatherByCoords: vi.fn(),
-  refreshNews: vi.fn(),
-  refreshAgenda: vi.fn(),
-  refreshGames: vi.fn(),
-  refreshUpcoming: vi.fn(),
-}));
-
 vi.mock('../src/lib/query-client.ts', () => ({
   queryClient: { setQueryData: vi.fn(), invalidateQueries: vi.fn() },
 }));
@@ -28,12 +13,15 @@ vi.mock('svelte-french-toast', () => ({
 }));
 
 import { createQuery } from '@tanstack/svelte-query';
+import { queryClient } from '../src/lib/query-client';
+import toast from 'svelte-french-toast';
 import { createWidgetQuery, createWidgetRefresh } from '../src/lib/widget-query';
 import { manifest as weatherManifest } from '../src/widgets/weather/manifest';
 import { manifest as newsManifest } from '../src/widgets/news/manifest';
 import { manifest as agendaManifest } from '../src/widgets/agenda/manifest';
 import { manifest as gamesManifest } from '../src/widgets/games/manifest';
 import { manifest as showsManifest } from '../src/widgets/shows/manifest';
+import { manifest as watchingManifest } from '../src/widgets/watching/manifest';
 
 const mockCreateQuery = vi.mocked(createQuery);
 
@@ -107,12 +95,12 @@ describe('createWidgetQuery', () => {
   });
 
   it('calls createQuery with correct options for games', () => {
-    createWidgetQuery(gamesManifest);
+    createWidgetQuery(gamesManifest, { platform: 'pc', page: 1 });
 
     expect(mockCreateQuery).toHaveBeenCalledOnce();
     expect(mockCreateQuery).toHaveBeenCalledWith(
       expect.objectContaining({
-        queryKey: ['dashboard', 'games', 'all', 'pc', 1],
+        queryKey: ['dashboard', 'games', 'pc', 'all', 1],
         staleTime: 6 * 60 * 60 * 1000,
         refetchInterval: 12 * 60 * 60 * 1000,
       }),
@@ -120,7 +108,7 @@ describe('createWidgetQuery', () => {
   });
 
   it('calls createQuery with correct options for shows', () => {
-    createWidgetQuery(showsManifest, [1, 2, 3]);
+    createWidgetQuery(showsManifest, { ids: [3, 1, 2] });
 
     expect(mockCreateQuery).toHaveBeenCalledOnce();
     expect(mockCreateQuery).toHaveBeenCalledWith(
@@ -132,9 +120,19 @@ describe('createWidgetQuery', () => {
     );
   });
 
-  it('throws for manifest without query config', () => {
-    const habitsManifest = { id: 'habits', component: () => {}, defaultLayout: { col: 0, row: 0, colSpan: 1, rowSpan: 1 } };
-    expect(() => createWidgetQuery(habitsManifest)).toThrow('Manifest "habits" does not declare query config');
+  it('queryFn goes through the request seam for the manifest endpoint', async () => {
+    const fetchSpy = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ ok: true, data: { events: [], updatedAt: 'x' } }),
+    });
+    vi.stubGlobal('fetch', fetchSpy);
+
+    createWidgetQuery(agendaManifest);
+    const options = mockCreateQuery.mock.calls[0][0] as { queryFn: () => Promise<unknown> };
+    await options.queryFn();
+
+    expect(fetchSpy).toHaveBeenCalledWith('/api/agenda', { method: 'GET' });
+    vi.unstubAllGlobals();
   });
 });
 
@@ -146,8 +144,32 @@ describe('createWidgetRefresh', () => {
     expect(typeof handler).toBe('function');
   });
 
-  it('throws for manifest without refresh config', () => {
-    const habitsManifest = { id: 'habits', component: () => {}, defaultLayout: { col: 0, row: 0, colSpan: 1, rowSpan: 1 } };
-    expect(() => createWidgetRefresh(habitsManifest, vi.fn())).toThrow('Manifest "habits" does not declare refresh config');
+  it('clear-cache hits the paired cache-bust endpoint', async () => {
+    const fetchSpy = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ ok: true, data: { events: [], updatedAt: 'x' } }),
+    });
+    vi.stubGlobal('fetch', fetchSpy);
+
+    const refetchFn = vi.fn().mockResolvedValue(undefined);
+    const handler = createWidgetRefresh(agendaManifest, refetchFn);
+    await handler({ clear: true });
+
+    expect(fetchSpy).toHaveBeenCalledWith('/api/agenda/refresh', { method: 'POST' });
+    expect(toast.success).toHaveBeenCalledWith('Cache cleared');
+    expect(queryClient.setQueryData).toHaveBeenCalledWith(
+      ['dashboard', 'agenda'],
+      { ok: true, data: { events: [], updatedAt: 'x' } },
+    );
+    vi.unstubAllGlobals();
+  });
+
+  it('clear-cache is a plain refetch when the endpoint has no cache-bust', async () => {
+    const refetchFn = vi.fn().mockResolvedValue(undefined);
+    const handler = createWidgetRefresh(watchingManifest, refetchFn);
+
+    await handler({ clear: true });
+
+    expect(refetchFn).toHaveBeenCalled();
   });
 });

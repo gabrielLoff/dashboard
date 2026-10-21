@@ -21,7 +21,7 @@ graph TD
         W5["HabitWidget"]
         W6["ShowsWidget"]
         TQ["TanStack Query<br/>Cache Layer"]
-        API["api-client.ts<br/>fetch wrapper"]
+        API["request()<br/>@dashboard/shared<br/>Endpoints contract"]
     end
 
     subgraph BFF["BFF Server (Hono :3001)"]
@@ -82,7 +82,8 @@ dashboard/
 │   │       ├── index.ts           # barrel exports
 │   │       ├── result.ts          # ApiResult<T>, ok(), err(), isOk(), isErr()
 │   │       ├── api-types.ts       # WeatherData, NewsData, AgendaData, FreeGamesData
-│   │       ├── query-keys.ts      # TanStack Query key factories
+│   │       ├── endpoints.ts        # Endpoints contract + ENDPOINT_META + request()
+│   │       ├── widget-manifest.ts  # QueryWidget | LocalWidget union
 │   │       └── weather-codes.ts   # WMO code→description + icon mapping
 │   │
 │   ├── eslint-config/       # @dashboard/eslint-config
@@ -91,7 +92,8 @@ dashboard/
 │   │
 │   ├── server/              # Hono BFF
 │   │   └── src/
-│   │       ├── index.ts           # App entry, CORS, route mounting, mock gate
+│   │       ├── index.ts           # App entry, mock gate, serve()
+│   │       ├── app.ts             # createApp() — CORS + route mounting (contract test reads this)
 │   │       ├── cache.ts           # TTLCache<T> in-memory with configurable TTL
 │   │       ├── db.ts              # SQLite (better-sqlite3) for sync data
 │   │       ├── mock-data.ts       # Mock fixtures, gated by MOCK=true env
@@ -118,10 +120,8 @@ dashboard/
 │           ├── main.ts              # App mount + global CSS
 │           ├── app.css              # Tailwind v4 + dark variant
 │           ├── lib/
-│           │   ├── api-client.ts    # Centralized HTTP client (GET/POST per route)
 │           │   ├── query-client.ts  # TanStack QueryClient config
-│           │   ├── query-config.ts  # useSourceQuery() — imports from widget-registry
-│           │   ├── widget-registry.ts # Collects all manifests: COMPONENTS, sourceConfigs, WIDGET_IDS, CAROUSEL_ITEMS
+│           │   ├── widget-registry.ts # Collects all manifests: COMPONENTS, WIDGET_IDS, CAROUSEL_ITEMS
 │           │   ├── theme.svelte.ts  # Dark/light theme store (Svelte runes)
 │           │   ├── layout-store.ts  # Carousel order, persisted to localStorage
 │           │   ├── habit-store.ts   # Client-side habit state (reducer + localStorage)

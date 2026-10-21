@@ -1,13 +1,11 @@
 import { Hono } from 'hono';
-import { createCachedRoute } from './cached-route.ts';
+import { createCachedRoute, type Params } from './cached-route.ts';
 import type { ApiResult, ShowSearchResult, ShowsData, EpisodeListEntry } from '@dashboard/shared';
 
 const UPCOMING_TTL = Number(process.env.CACHE_TTL_SHOWS) * 1000 || 300_000;
 
-function upcomingCacheKey(
-  ctx: { req: { query: (key: string) => string | undefined } },
-): string {
-  const ids = ctx.req.query('ids') ?? '';
+function upcomingCacheKey(params: Params): string {
+  const ids = params.ids ?? '';
   const sorted = ids
     .split(',')
     .map((s) => Number(s.trim()))
@@ -18,10 +16,10 @@ function upcomingCacheKey(
 }
 
 function upcomingFetchFn(
-  ctx: { req: { query: (key: string) => string | undefined } },
+  params: Params,
   getUpcoming_: (ids: number[]) => Promise<ApiResult<ShowsData>>,
 ): Promise<ApiResult<ShowsData>> {
-  const ids = ctx.req.query('ids') ?? '';
+  const ids = params.ids ?? '';
   const parsed = ids
     .split(',')
     .map((s) => Number(s.trim()))
@@ -36,7 +34,7 @@ export function createShowsRoute(
   fetchEpisodes_: (showId: number) => Promise<ApiResult<EpisodeListEntry[]>>,
 ) {
   const upcomingRoute = createCachedRoute(
-    (ctx) => upcomingFetchFn(ctx, getUpcoming_),
+    (params) => upcomingFetchFn(params, getUpcoming_),
     UPCOMING_TTL,
     upcomingCacheKey,
   );

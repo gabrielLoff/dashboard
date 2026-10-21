@@ -1,16 +1,12 @@
 import { writable, derived, get } from 'svelte/store';
+import type { WatchlistEntry } from '@dashboard/shared';
+
+export type { WatchlistEntry };
 
 const STORAGE_KEY = 'dashboard-shows-watchlist';
 const MAX_SHOWS = 50;
 
 // --- Types ---
-
-export interface WatchlistEntry {
-  id: number;
-  name: string;
-  image?: string;
-  addedAt: string;
-}
 
 export interface WatchlistState {
   entries: WatchlistEntry[];

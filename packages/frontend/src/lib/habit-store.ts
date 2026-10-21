@@ -1,4 +1,7 @@
 import { writable, derived } from 'svelte/store';
+import type { Habit } from '@dashboard/shared';
+
+export type { Habit };
 
 const STORAGE_KEY = 'dashboard-habits';
 
@@ -55,13 +58,6 @@ export function lastUpdatedDate(habits: Habit[]): string | null {
 }
 
 // --- Types ---
-
-export interface Habit {
-  id: string;
-  name: string;
-  createdAt: string;
-  completions: Record<string, boolean>;
-}
 
 export type HabitAction =
   | { type: 'ADD_HABIT'; name: string }
